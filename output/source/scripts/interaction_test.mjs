@@ -3,7 +3,7 @@
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
 import path from 'node:path';
-const url = process.argv[2] || 'http://localhost:8080/?aa=0';
+const url = process.argv[2] || 'http://localhost:8080/kesit.html?aa=0';
 const out = process.argv[3] || './shots';
 fs.mkdirSync(out, { recursive: true });
 const soft = process.env.SOFT_GL || 'llvmpipe';

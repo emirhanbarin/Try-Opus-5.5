@@ -1,6 +1,13 @@
 # Supremo 85 — 3B Profil Görüntüleyici
 
-Supremo 85 (8500 serisi) uPVC pencere sisteminin kasa + kanat + üçlü cam kesit numunesini (300 mm) gösteren etkileşimli 3B görüntüleyici. Kesit geometrisi teknik dökümanın 9. sayfasındaki (Su tahliye görünümü) vektör çizimden birebir çıkarılmıştır. İnternet bağlantısı gerektirmez; three.js dahil tüm dosyalar bu klasördedir.
+Supremo 85 (8500 serisi) uPVC pencere sisteminin iki etkileşimli 3B numunesi. İnternet bağlantısı gerektirmez; three.js dahil tüm dosyalar bu klasördedir.
+
+| Sayfa | İçerik |
+|---|---|
+| **Köşe kesiti** (`index.html`, ilk açılan) | 45° kaynaklı köşe numunesi (2 × 300 mm kol): keşif turu, 360° otomatik döndürme, su tahliyesi animasyonu, teknik çizim bindirme, renk/folyo seçenekleri, fuar/kiosk modu |
+| **Düz kesit** (`kesit.html`) | 300 mm düz kesit numunesi (önceki sürüm, değiştirilmedi) |
+
+İki sayfa arasında üst ortadaki **Köşe kesiti · Düz kesit** seçicisiyle geçilir. Kesit geometrisi teknik dökümanın 9. sayfasındaki vektör çizimden birebir çıkarılmıştır.
 
 ## Başlatma
 
@@ -10,6 +17,7 @@ Supremo 85 (8500 serisi) uPVC pencere sisteminin kasa + kanat + üçlü cam kesi
 | **macOS** | `başlat.command` dosyasına çift tıklayın (ilk açılış için aşağıdaki nota bakın). |
 | **Linux** | Klasörde `python3 sunucu.py` çalıştırın. |
 | **Her sistemde (sunucusuz)** | `index.html` dosyasına çift tıklayın; site tarayıcıda doğrudan açılır. |
+| **Fuar / kiosk ekranı** | `kiosk-başlat.bat` (Windows) veya `kiosk-başlat.command` (macOS); ayrıntılar aşağıda. |
 
 Başlat dosyası yerel sunucuyu açar ve tarayıcı otomatik olarak `http://localhost:8080` adresine gider (port doluysa sıradaki boş port kullanılır). Kapatmak için açılan terminal penceresini kapatın. Önce ZIP'i bir klasöre çıkarın; ZIP içinden doğrudan çift tıklanırsa diğer dosyalar bulunamaz.
 
@@ -19,37 +27,56 @@ Başlat dosyası yerel sunucuyu açar ve tarayıcı otomatik olarak `http://loca
 
 Tarayıcı: WebGL 2 destekli güncel Chrome, Edge, Firefox veya Safari (16.4+).
 
-## Kullanım
+## Fuar / kiosk kurulumu
+
+`kiosk-başlat.bat` / `kiosk-başlat.command`, sunucuyu açar ve Edge ya da Chrome'u **tam ekran kiosk modunda** (adres çubuğu yok) köşe sayfasına `?kiosk=1` ile açar. Tarayıcı bulunamazsa varsayılan tarayıcı açılır; sayfa ilk dokunuşta tam ekrana geçer.
+
+- **Tanıtım modu:** 90 sn dokunulmazsa görünüm sıfırlanır; keşif turu döngüde oynar, numune 360° döner ve "Dokunun ve keşfedin" çağrısı görünür. İlk dokunuş tanıtımı bitirir (parça seçimi sayılmaz). Düz kesit sayfasında da boşta kalınca köşe sayfasına dönülür.
+- **Dokunmatik:** tek parmakla döndür, iki parmakla yakınlaştır/kaydır, parçaya dokun. Düğmeler büyür; sağ tık, metin seçimi ve sayfa yakınlaştırma kapalıdır; fare imleci 3 sn sonra gizlenir.
+- **Operatör:** çıkış Alt+F4 (Windows) / ⌘Q (macOS). Sağ üst köşeye 3 sn içinde 5 kez dokunmak performans panelini açar.
+- **Adres seçenekleri:** `&idle=60` (tanıtıma geçiş süresi, sn), `&reload=6` (tanıtımdayken 6 saatte bir yenileme), `&fs=0` (tam ekran isteme), `&q=low` (düşük kalite kademesi), `&dpr=1` (piksel oranı üst sınırı).
+- **Windows önerileri:** Ayarlar → Sistem → Güç bölümünde ekran ve uyku için **Hiçbir zaman** seçin. Açılışta otomatik başlatmak için `Win + R` → `shell:startup` klasörüne `kiosk-başlat.bat` kısayolu koyun. Grafik bağlamı kaybolursa sayfa kendini yeniden yükler.
+
+## Kullanım (köşe kesiti)
 
 | Eylem | Kontrol |
 |---|---|
-| Döndür / kaydır / yakınlaştır | Sol tık sürükle · sağ tık (veya Shift) sürükle · tekerlek |
-| Parça seç / bilgi paneli | Parçaya tıklayın (üzerine gelince vurgulanır) |
-| Odaklan | Parçaya çift tıklayın · boşluğa çift tık: görünümü sıfırla |
-| Gizle / izole et | Listedeki göz ve hedef simgeleri · `H` / `I` |
+| Döndür / kaydır / yakınlaştır | Sol tık veya tek parmak sürükle · sağ tık veya iki parmak · tekerlek veya kıstırma |
+| Parça seç / bilgi paneli | Parçaya tıklayın (üzerine gelince vurgulanır) · çift tık: odaklan |
+| Keşif turu | **Keşif turu** düğmesi · `T` (←/→ bölüm, boşluk: duraklat) |
+| 360° otomatik döndürme | **360°** · `O`; ok simgesinden hız (yavaş / orta / hızlı). Stüdyo ışığı kamerayla döner. |
 | Patlatılmış görünüm | Alt çubuktaki kaydırıcı veya oynat düğmesi · `E` |
-| Kesit düzlemi | **Kesit** · enine / boyuna / yatay, konum kaydırıcısı, hazır kesitler · `C` |
-| Döküman ölçüleri | **Ölçüler** · `D` |
-| Sıfırla / seçimi kaldır | `R` / `Esc` |
+| Kesit düzlemi | **Kesit** · alt kol / yan kol / boyuna / **gönye (kaynak yüzü)**, hazır kesitler · `C` |
+| Döküman ölçüleri ve teknik çizim | **Ölçüler** · ölçü çizgileri ve s.9 çiziminin kesit ucuna bindirilmesi · `D` |
+| Renk / folyo | **Renk** düğmesi: beyaz, antrasit gri, siyah, altın meşe, ceviz (görsel amaçlı) |
+| Bilgi işaretleri | **Görünüm** → Bilgi işaretleri |
+| Teknik özellikler | Sağ üstte **Özellikler** (döküman değerleri, sayfa numaralarıyla) |
+| Gizle / izole et · sıfırla | Listedeki göz ve hedef simgeleri, `H` / `I` · `R` / `Esc` |
 
 ## Teknik özet
 
-- Parçalar (22 obje): kasa, kanat, cam çıtası (+ ko-ekstrüde dudakları), kasa dış contası, orta conta, kanat iç contası, dış cam contası, kasa ve kanat galvaniz çelik takviyeleri, 4 adet 3,9×19 takviye vidası, 3 cam paneli, ısıcam ara çıtası, nem alıcı, ikincil sızdırmazlık, 2 cam takoz köprüsü, kasa/kanat drenaj kanalları (32 × Ø4 mm yarıklar) ve drenaj kapağı (rüzgarlık).
-- Geometri: 74.738 üçgen, 23 çizim çağrısı (kesit düzlemi göstergesi ve ölçü katmanı açıkken en fazla 26), meshopt + 16 bit nicemleme (`assets/supremo85.glb`, 548 KB).
-- Dokular (KTX2/Basis): önceden pişirilmiş AO atlası 2048² (montaj AO + parça AO), galvaniz deseni 1024², stüdyo HDRI 1024×512 RGBA16F.
-- Aydınlatma: yerel stüdyo HDRI ortamı + gölgesiz tek yönlü ışık; zemin temas gölgesi yalnızca model hareket ettiğinde yeniden hesaplanır; son işlem (post-processing) yoktur.
-- Performans: sağ üstteki FPS çipine tıklayıp **Performans testi** ile kendi cihazınızda ölçün. Düşük FPS'te piksel oranı otomatik düşürülür. İsteğe bağlı adres parametreleri: `?aa=0` (kenar yumuşatma kapalı), `?dpr=1` (piksel oranı üst sınırı).
+**Köşe kesiti:**
+- **Parçalar:** 26 obje: 45° kaynaklı kasa ve kanat, cam çıtası ve dudakları, 4 conta, 4 galvaniz takviye (kasa A − 153, kanat A − 160 mm), 4 adet 3,9 × 19 YHB vida (kasa uçtan 150, kanat 120 mm), üç panel ısıcam (ara çıta, nem alıcı, ikincil sızdırmazlık), takoz köprüsü, drenaj yarıkları (A, B, C, D-E: 32 × Ø4 mm; iç köşeden 10 · 32 · 70 · 32 mm, eğik yarıklar kasada 50°, kanatta 60°) ve rüzgarlık.
+- **Geometri:** 84.472 üçgen, 27 çizim çağrısı; en yoğun durumda (su animasyonu, çizim bindirme) 94.392 üçgen ve 31 çağrı. Meshopt + 16 bit nicemleme (`assets/kose/supremo85_kose.glb`, 662 KB).
+- **Dokular (KTX2):** AO atlası 2048² (montaj + parça AO), stüdyo HDRI v2 1024 × 512 RGBA16F (Blender/Cycles'ta modellenmiş stüdyo), ahşap folyo deseni 2048 × 512, galvaniz deseni 1024².
+- **Görüntü:** Khronos PBR Neutral ton eşleme, kamerayla dönen stüdyo ışığı, yakın planda ekstrüzyon kalıp izleri ve EPDM greni, gönyede kaynak dikişi çizgisi, zemin ışık havuzu ve temas gölgesi. Son işlem (post-processing) ve gerçek zamanlı gölge yoktur.
+- **Kalite kademesi:** Yazılımsal grafikte ya da düşük FPS'te mikro ayrıntılar ve piksel oranı otomatik düşer. `?q=high|low` ile elle seçilebilir.
+
+**Düz kesit:** 22 obje, 74.738 üçgen, 23 çizim çağrısı. Önceki sürümle aynıdır.
+
+**Performans:** Sağ üstteki FPS çipine tıklayıp **Performans testi** ile kendi cihazınızda ölçün.
 
 ## Klasör yapısı
 
 ```
-index.html, css/               arayüz (Inter yazı tipi CSS'e gömülü)
-js/app.js                      uygulama + three.js r186, tek dosya (kaynak: output/source/viewer)
-assets/                        model (.glb) ve KTX2 dokular
-assets/assets-embedded.js      aynı dosyaların gömülü kopyası (index.html doğrudan açılınca kullanılır)
-vendor/basis/                  KTX2 (Basis) dönüştürücü
-başlat.bat / başlat.command    çift tıklayarak başlatma
-sunucu.py / .js / .ps1 / .pl   yerel statik sunucular (Python / Node / PowerShell / Perl)
+index.html, css/kose.css, js/kose.js   köşe kesiti (fuar sürümü; kaynak: output/source/viewer-kose)
+kesit.html, css/style.css, js/app.js   düz kesit (kaynak: output/source/viewer); style.css ortak yazı tipi ve bileşenler
+assets/kose/                           köşe modeli (.glb), AO, stüdyo HDRI v2, ahşap deseni + gömülü kopya (file://)
+assets/                                düz kesit modeli ve dokuları + gömülü kopya
+vendor/basis/                          KTX2 (Basis) dönüştürücü
+başlat.bat / başlat.command            çift tıklayarak başlatma
+kiosk-başlat.bat / .command            fuar / kiosk modu
+sunucu.py / .js / .ps1 / .pl           yerel statik sunucular (Python / Node / PowerShell / Perl; --kiosk seçeneği)
 ```
 
 Lisanslar: three.js ve three-mesh-bvh MIT (`vendor/LICENSE-*`), Inter SIL OFL (`fonts/`), Basis Universal dönüştürücü Apache-2.0.

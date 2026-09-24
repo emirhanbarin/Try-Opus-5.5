@@ -4,7 +4,8 @@ use strict; use warnings;
 use IO::Socket::INET; use File::Basename qw(dirname); use Cwd qw(abs_path);
 
 my $root = dirname(abs_path($0));
-my $start = shift // 8080;
+my $kiosk = grep { $_ eq '--kiosk' } @ARGV;            # fuar/kiosk: Chrome kiosk modunda, ?kiosk=1 ile açılır
+my ($start) = grep { /^\d+$/ } @ARGV; $start //= 8080;
 my %types = ('.html'=>'text/html; charset=utf-8', '.js'=>'text/javascript; charset=utf-8', '.mjs'=>'text/javascript; charset=utf-8',
   '.css'=>'text/css; charset=utf-8', '.json'=>'application/json', '.wasm'=>'application/wasm', '.glb'=>'model/gltf-binary',
   '.ktx2'=>'image/ktx2', '.woff2'=>'font/woff2', '.png'=>'image/png', '.svg'=>'image/svg+xml', '.txt'=>'text/plain; charset=utf-8', '.md'=>'text/markdown; charset=utf-8');
@@ -14,9 +15,12 @@ for my $p ($start .. $start + 40) {
   if ($srv) { $port = $p; last; }
 }
 die "Boş port bulunamadı\n" unless $srv;
-my $url = "http://localhost:$port/";
+my $url = "http://localhost:$port/" . ($kiosk ? '?kiosk=1' : '');
 print "Supremo 85 3B görüntüleyici çalışıyor: $url\nKapatmak için bu pencereyi kapatın (veya Ctrl+C).\n";
-if ($^O eq 'darwin') { system('open', $url); } else { system("xdg-open '$url' >/dev/null 2>&1 &"); }
+my @kflags = ('--kiosk', $url, '--no-first-run', '--no-default-browser-check', '--overscroll-history-navigation=0', '--disable-pinch', '--user-data-dir=/tmp/supremo85-kiosk');
+if ($kiosk && $^O eq 'darwin' && -d '/Applications/Google Chrome.app') { print "Kiosk modu: çıkmak için Cmd+Q.\n"; system('open', '-na', 'Google Chrome', '--args', @kflags); }
+elsif ($kiosk && $^O eq 'darwin' && -d '/Applications/Microsoft Edge.app') { print "Kiosk modu: çıkmak için Cmd+Q.\n"; system('open', '-na', 'Microsoft Edge', '--args', @kflags, '--edge-kiosk-type=fullscreen'); }
+elsif ($^O eq 'darwin') { system('open', $url); } else { system("xdg-open '$url' >/dev/null 2>&1 &"); }
 $SIG{PIPE} = 'IGNORE';
 while (my $c = $srv->accept) {
   my $req = <$c>;
