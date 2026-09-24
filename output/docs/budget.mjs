@@ -1,4 +1,5 @@
-// Teknik dokümantasyonun bütçe tablosu (7.1) için ölçüm: her durumda çizilen karenin üçgen ve çizim çağrısı sayısı
+// Belgelerdeki bütçe tablosu (teknik dokümantasyon 7.1, yeniden yapım kılavuzu 7.15) için ölçüm: her durumda çizilen
+// karenin üçgen ve çizim çağrısı sayısı
 // kullanım: xvfb-run -a node budget.mjs [site adresi]
 //   varsayılan adres http://127.0.0.1:8091 (önce: cd ../site && python3 -m http.server 8091); playwright-core gerekir
 //   (shots.mjs gibi, playwright-core'un kurulu olduğu klasöre kopyalanıp orada da çalıştırılabilir)

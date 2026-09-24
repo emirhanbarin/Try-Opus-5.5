@@ -27,7 +27,10 @@ Yeniden üretim (Python 3.11 + `pip install bpy pymupdf shapely scipy pillow`, K
 3. `scripts/check_assembly.py` ve `scripts/assembly_report.py`: montaj denetimi.
 4. `scripts/bake_ao.py`: UV atlası, Cycles AO (montaj + parça) ve `bake/supremo85_raw.glb`.
 5. Sıkıştırma: `gltf-transform meshopt bake/supremo85_raw.glb ../site/assets/supremo85.glb --quantization-volume scene --quantize-position 16 --quantize-normal 12 --quantize-texcoord 14`.
-6. Dokular: `ktx create --encode basis-lz ... bake/ao_packed.png ../site/assets/ao.ktx2`; ardından `scripts/make_studio_hdri.py` ve `scripts/make_spangle.py`.
+6. Dokular:
+   - AO paketleme (betik yok): `bake/ao_assembly_16bit.png` ve `bake/ao_self_16bit.png` → `bake/ao_packed.png`; R = G = B = round(montaj16 / 257), A = round(parça16 / 257).
+   - `ktx create --format R8G8B8A8_UNORM --assign-oetf linear --generate-mipmap --encode basis-lz --clevel 5 --qlevel 255 bake/ao_packed.png ../site/assets/ao.ktx2` (`--assign-oetf linear` olmadan PNG sRGB sayılır ve AO koyulaşır).
+   - `scripts/make_studio_hdri.py env/studio.ktx2`; `scripts/make_spangle.py tex/spangle.png` ve `ktx create --format R8G8B8_UNORM --assign-oetf linear --generate-mipmap --encode basis-lz --clevel 4 --qlevel 200 tex/spangle.png ../site/assets/spangle.ktx2`.
 7. `viewer/build.sh`: kaynakları `../site/js/app.js`'e derler ve `assets/assets-embedded.js`'i üretir.
 
 **Köşe numunesi**
@@ -43,11 +46,11 @@ Yeniden üretim (Python 3.11 + `pip install bpy pymupdf shapely scipy pillow`, K
    - Folyo maskesi ikinci UV'ye (`FOIL`) yazılır: dış kontur yan yüzleri folyo, uç kesit ve kamara duvarları beyaz çekirdek.
 4. Sıkıştırma ve dokular (düz kesitle aynı ayarlar):
    - `gltf-transform meshopt` → `../site/assets/kose/supremo85_kose.glb`
-   - `ktx create --encode basis-lz` → `ao_kose.ktx2`
+   - AO paketleme (`kose_` önekiyle) ve `ktx create` (düz kesitle aynı bayraklar) → `ao_kose.ktx2`
 5. `scripts/render_studio_hdri.py env/studio2.ktx2`: Blender/Cycles'ta modellenmiş stüdyonun panoraması.
    - Yön işaretleriyle three.js eşdikdörtgen eksenine otomatik hizalanır.
    - Float16 mantisi 7 bite indirilir.
-6. `scripts/make_wood_decor.py tex/ahsap.png`: döşenebilir prosedürel ahşap deseni, ardından `ktx create` → `ahsap.ktx2`.
+6. `scripts/make_wood_decor.py tex/ahsap.png`: döşenebilir prosedürel ahşap deseni, ardından `ktx create --format R8G8B8_UNORM --assign-oetf linear --generate-mipmap --encode basis-lz --clevel 4 --qlevel 230` → `ahsap.ktx2`.
 7. Görüntüleyiciye gömülen PDF verileri:
    - `scripts/extract_drawing_lines.py`: s.9 çizim bindirmesi → `viewer-kose/js/drawing-data.js`.
    - `scripts/extract_water_path.py`: s.9 su okları + yarık konumları → `viewer-kose/js/water-path.js`. Yol, kesit poligonlarına göre denetlenir.
@@ -68,8 +71,9 @@ Yeniden üretim (Python 3.11 + `pip install bpy pymupdf shapely scipy pillow`, K
   - `scripts/kiosk_soak.mjs <url> 30 1920x1080`: kiosk dayanıklılığı.
   - `scripts/bench.mjs`: performans.
 
-**Teknik dokümantasyon (PDF)**
+**Belgeler (PDF)**
 - `../docs/dokuman.html` → `../docs/Supremo85_3B_teknik_dokumantasyon.pdf`: `node ../docs/build_pdf.mjs` (Chromium + PyMuPDF; playwright-core başka klasördeyse `PW_MODULES=<klasör>`).
+- `../docs/yeniden_yapim.html` → `../docs/Supremo85_3B_yeniden_yapim_kilavuzu.pdf` (projenin nasıl yapıldığı ve yeni bir oturumda nasıl yeniden yaptırılacağı): `node ../docs/build_pdf.mjs yeniden_yapim.html`. İki belge `../docs/belge.css` stilini paylaşır.
   - Boyut, satır sayısı, sürüm ve commit listesi derleme sırasında dosyalardan ve git'ten doldurulur; içindekiler iki geçişte sayfalanır.
 - Ekran görüntüleri `../docs/shots.mjs` (→ `docs/img/`), bütçe tablosu `../docs/budget.mjs` ile alınır; ikisi de yerel sunucudaki siteye bağlanır.
 

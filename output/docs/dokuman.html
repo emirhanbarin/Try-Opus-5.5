@@ -3,84 +3,15 @@
 <head>
 <meta charset="utf-8">
 <title>Supremo 85 3B Görüntüleyici — Teknik Dokümantasyon</title>
+<meta name="pdf-output" content="Supremo85_3B_teknik_dokumantasyon.pdf">
+<meta name="pdf-footer" content="Supremo 85 3B Görüntüleyici · Teknik dokümantasyon">
+<meta name="description" content="Geliştirici kılavuzu: veri hattı, görüntüleyici mimarisi, gölgelendiriciler, mühendislik modülleri, test ve yeniden üretim">
+<meta name="keywords" content="Supremo 85, uPVC, three.js, WebGL, Blender, KTX2, kiosk, EN ISO 10077-2">
 <!-- Derleme: build_pdf.mjs. {{...}} yer tutucuları derleme sırasında dosyalardan doldurulur (boyut, satır, commit). -->
 <style>
 {{FONTS}}
-@page { size: A4; margin: 16mm 16mm 18mm 16mm; }
-:root { --ink: #18202c; --muted: #566273; --faint: #8a95a4; --line: #d9e0e8; --soft: #f3f6f9; --accent: #1377b5; --accent-soft: #e8f3fb; --warm: #c46a00; --warm-soft: #fff6e8; }
-* { box-sizing: border-box; }
-html { font-family: 'Inter', 'DejaVu Sans', sans-serif; font-size: 9.5pt; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-body { margin: 0; line-height: 1.5; font-feature-settings: 'tnum' 0; }
-h1, h2, h3 { font-weight: 700; letter-spacing: -.01em; color: #0f1720; }
-/* bölümler akış içinde başlar (yalnız 1. bölüm içindekilerden sonra yeni sayfada); sayfa başındaki üst boşluk tarayıcıca kesilir */
-h1 { font-size: 19pt; margin: 26pt 0 10pt; padding-bottom: 7pt; border-bottom: 1.2pt solid var(--accent); break-after: avoid; }
-#s1 { break-before: page; margin-top: 0; }
-h1 .num { color: var(--accent); margin-right: 8pt; }
-h2 { font-size: 12.5pt; margin: 15pt 0 5pt; break-after: avoid; }
-h3 { font-size: 10.2pt; margin: 11pt 0 3pt; break-after: avoid; color: #223043; }
-p { margin: 0 0 6pt; orphans: 3; widows: 3; }
-/* tabloyu, görseli ya da kodu tanıtan paragraf onunla aynı sayfada kalsın */
-p:has(+ table, + figure, + .grid2, + .grid3, + svg, + pre) { break-after: avoid; }
-ul, ol { margin: 0 0 7pt; padding-left: 15pt; }
-li { margin: 0 0 2.5pt; }
-strong { font-weight: 650; }
-a { color: var(--accent); text-decoration: none; }
-code { font-family: 'DejaVu Sans Mono', monospace; font-size: 8pt; background: var(--soft); border: .4pt solid #e3e8ee; border-radius: 2.5pt; padding: 0 2.5pt; }
-pre { font-family: 'DejaVu Sans Mono', monospace; font-size: 7.6pt; line-height: 1.42; background: #f6f8fb; border: .5pt solid #dfe5ec; border-radius: 4pt; padding: 7pt 9pt; margin: 4pt 0 9pt; white-space: pre-wrap; break-inside: avoid; }
-pre code { background: none; border: 0; padding: 0; font-size: inherit; }
-table { width: 100%; border-collapse: collapse; margin: 4pt 0 10pt; font-size: 8.4pt; break-inside: avoid; }
-table.long { break-inside: auto; }                 /* uzun tablolar sayfa arasında bölünebilir (başlık satırı yinelenir) */
-thead { display: table-header-group; }
-tr { break-inside: avoid; }
-th { text-align: left; font-weight: 650; background: #edf2f7; color: #243244; border-bottom: .8pt solid #c5d0dc; padding: 4pt 5pt; }
-td { border-bottom: .5pt solid var(--line); padding: 3.4pt 5pt; vertical-align: top; }
-td.r, th.r { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
-td.c { white-space: nowrap; }
-.src { display: inline-block; font-size: 7.2pt; font-weight: 650; color: var(--accent); background: var(--accent-soft); border-radius: 2.5pt; padding: 0 3pt; white-space: nowrap; }
-figure { margin: 6pt 0 11pt; break-inside: avoid; }
-figure img { display: block; width: 100%; border-radius: 3pt; border: .5pt solid #cfd7e1; }
-figcaption { font-size: 7.8pt; color: var(--muted); margin-top: 3pt; }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8pt; }
-.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7pt; }
-.grid2 figure, .grid3 figure { margin: 0 0 6pt; }
-.note { border-left: 2.4pt solid var(--accent); background: var(--accent-soft); padding: 5pt 9pt; margin: 6pt 0 10pt; border-radius: 0 3pt 3pt 0; break-inside: avoid; }
-.note.warn { border-left-color: var(--warm); background: var(--warm-soft); }
-.note p:last-child { margin-bottom: 0; }
-.lead { font-size: 10.4pt; color: #2a3646; }
-.kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6pt; margin: 6pt 0 11pt; }
-.kpi div { border: .5pt solid var(--line); border-radius: 4pt; padding: 6pt 8pt; background: #fbfcfd; }
-.kpi b { display: block; font-size: 14pt; color: #0f1720; letter-spacing: -.01em; }
-.kpi span { font-size: 7.6pt; color: var(--muted); }
-svg.diag { display: block; width: 100%; height: auto; margin: 4pt 0 2pt; }
-svg.diag text { font-family: 'Inter', sans-serif; }
-.avoid { break-inside: avoid; }
-.muted { color: var(--muted); }
-.small { font-size: 8.2pt; }
-
-/* kapak */
-.cover { width: 210mm; height: 297mm; background: #0d1218; color: #e8edf2; position: relative; overflow: hidden; }
-.cover .top { padding: 26mm 20mm 0; }
-.cover .kicker { font-size: 9pt; letter-spacing: .28em; font-weight: 700; color: #5cc8ff; }
-.cover h1 { break-before: auto; border: 0; font-size: 34pt; line-height: 1.05; color: #fff; margin: 7mm 0 4mm; padding: 0; letter-spacing: -.02em; }
-.cover .sub { font-size: 14pt; color: #b9c6d4; font-weight: 500; }
-.cover .desc { margin-top: 5mm; font-size: 9.6pt; color: #8f9cab; max-width: 150mm; }
-.cover .hero { position: absolute; left: 0; right: 0; top: 104mm; height: 150mm; background: url('img/00_kapak.jpg') center / cover no-repeat; }
-.cover .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, #0d1218 0%, rgba(13, 18, 24, 0) 22%, rgba(13, 18, 24, 0) 70%, #0d1218 100%); }
-.cover .meta { position: absolute; left: 20mm; right: 20mm; bottom: 16mm; display: flex; justify-content: space-between; font-size: 8.6pt; color: #8f9cab; border-top: .5pt solid #2a3542; padding-top: 4mm; }
-.cover .meta b { color: #d7e1ea; font-weight: 600; }
-
-/* içindekiler */
-#toc h1 { margin-top: 0; }
-#toc ol { list-style: none; padding: 0; margin: 0; columns: 2; column-gap: 9mm; }
-#toc li { display: flex; align-items: baseline; gap: 6pt; margin: 0; padding: 2.6pt 0; border-bottom: .4pt dotted #cfd7e1; break-inside: avoid; }
-#toc li.l1 { font-weight: 650; font-size: 10pt; padding-top: 6pt; break-after: avoid; }
-#toc li.l2 { padding-left: 14pt; font-size: 8.8pt; color: #334255; }
-#toc li a { color: inherit; flex: 1; }
-#toc li .pg { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 18pt; text-align: right; }
-#toc li .tn { display: inline-block; min-width: 20pt; font-variant-numeric: tabular-nums; }
-#toc li.l1 .tn { color: var(--accent); }
-#toc li.l2 .tn { min-width: 26pt; color: var(--muted); }
 </style>
+<link rel="stylesheet" href="belge.css">
 </head>
 <body>
 
@@ -161,7 +92,8 @@ svg.diag text { font-family: 'Inter', sans-serif; }
 │  ├─ section_mm.json · kose_info.json · water_path.json · thermal_check.json
 │  ├─ bake/ · env/ · tex/   ara çıktılar (AO, HDRI, desenler, ısı önizlemesi)
 │  └─ reference/            bindirme görselleri (döküman ve sertifika PDF'leri depoda tutulmaz)
-└─ docs/                    bu belge: dokuman.html, img/, shots.mjs, budget.mjs, build_pdf.mjs, pdf_post.py</code></pre>
+└─ docs/                    bu belge (dokuman.html) ve yeniden yapım kılavuzu (yeniden_yapim.html); ortak stil belge.css,
+                             img/, shots.mjs, budget.mjs, build_pdf.mjs, pdf_post.py</code></pre>
 
 <!-- ================================================================ 2 -->
 <h1 id="s2"><span class="num">2</span>Kaynak veriler</h1>

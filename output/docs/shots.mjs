@@ -1,4 +1,4 @@
-// Teknik dokümantasyon için ekran görüntüleri: çalışan siteden tutarlı bir set (1600 × 900, JPEG) alır → img/
+// Belgeler için ekran görüntüleri: çalışan siteden tutarlı bir set (1600 × 900, JPEG; kapaklar 1400 × 1000) alır → img/
 // kullanım: OUT=<img klasörü> xvfb-run -a node shots.mjs [site adresi]
 //   varsayılan adres http://127.0.0.1:8091 (önce: cd ../site && python3 -m http.server 8091); playwright-core gerekir
 //   (betik, playwright-core'un kurulu olduğu klasöre kopyalanıp orada da çalıştırılabilir; OUT bu yüzden ayrı verilir)
@@ -42,6 +42,14 @@ await c.addStyleTag({ content: 'body > :not(#scene) { visibility: hidden !import
 await c.waitForTimeout(2000);
 await c.screenshot({ path: path.join(out, '00_kapak.jpg'), type: 'jpeg', quality: 88 });
 console.log('00_kapak');
+// yeniden yapım kılavuzunun kapağı: patlatılmış, parçalar kadraja sığsın diye kamera biraz uzaklaştırılır
+await c.evaluate(() => window.__viewer.setExplodeTarget(1, true));
+await settle(c);
+await c.evaluate(() => { const a = window.__viewer.app, t = a.controls.target;
+  a.camera.position.sub(t).multiplyScalar(1.38).add(t); a.controls.update(); a.state.needsRender = 3; });
+await c.waitForTimeout(4000);
+await c.screenshot({ path: path.join(out, '00_kapak_patlatma.jpg'), type: 'jpeg', quality: 88 });
+console.log('00_kapak_patlatma');
 await c.close();
 
 // ---- köşe sayfası

@@ -1,11 +1,14 @@
-// Teknik dokümantasyonu PDF'e derler: dokuman.html → Supremo85_3B_teknik_dokumantasyon.pdf
-// kullanım: node build_pdf.mjs              (git, python3 + PyMuPDF, playwright-core ve Chromium gerekir)
+// Belgeleri PDF'e derler: dokuman.html → Supremo85_3B_teknik_dokumantasyon.pdf, yeniden_yapim.html → yeniden yapım kılavuzu
+// kullanım: node build_pdf.mjs [belge.html]   (varsayılan dokuman.html; git, python3 + PyMuPDF, playwright-core ve Chromium gerekir)
+//   Belge kendi bilgisini meta etiketleriyle verir: <title> (PDF başlığı), pdf-output (çıktı dosyası), pdf-footer (alt bilgi),
+//   description (konu) ve keywords (anahtar sözcükler).
 //   playwright-core başka bir klasörde kuruluysa: PW_MODULES=<node_modules'u içeren klasör> node build_pdf.mjs
 //   Chromium yolu: CHROMIUM (varsayılan /opt/pw-browsers/chromium)
 // Adımlar:
 //   1. {{…}} yer tutucuları dosyalardan doldurulur: yazı tipi (site/css/style.css içindeki gömülü Inter), sürüm ve tarih
-//      (site/ ya da source/'ta .md dışı bir dosyaya dokunan son commit), commit listesi, dosya boyutları ({{KB:yol}}) ve
-//      satır sayıları ({{LINES:yol,…}}); yollar output/'a göredir.
+//      (site/ ya da source/'ta .md dışı bir dosyaya dokunan son commit), commit listesi ({{COMMITS}}, {{COMMITCOUNT}}), dosya
+//      boyutları ({{KB:yol}}), klasör boyutu ve dosya sayısı ({{DIR:yol}}, {{FILES:yol}}) ve satır sayıları ({{LINES:yol,…}});
+//      yollar output/'a göredir.
 //   2. İçindekiler h1/h2 başlıklarından kurulur. Gövde iki kez basılır: ilk baskının PDF ana hattından her başlığın sayfası
 //      okunur, ikinci baskıda içindekilere yazılır ve sayfaların değişmediği denetlenir.
 //   3. Kapak ayrı basılır (kenar boşluğu ve alt bilgi yok); pdf_post.py kapağı gövdenin önüne ekler, yer imlerini,
@@ -19,9 +22,16 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const out = path.resolve(here, '..');                                   // output/
-const PDF = path.join(here, 'Supremo85_3B_teknik_dokumantasyon.pdf');
-const TITLE = 'Supremo 85 3B Görüntüleyici — Teknik Dokümantasyon';
-const FOOTER = 'Supremo 85 3B Görüntüleyici · Teknik dokümantasyon';
+const SRC = path.resolve(here, process.argv[2] || 'dokuman.html');
+const src = fs.readFileSync(SRC, 'utf8');
+const meta = (name) => {
+  const m = src.match(new RegExp(`<meta name="${name}" content="([^"]*)">`));
+  if (!m) throw new Error(`${path.basename(SRC)}: <meta name="${name}"> yok`);
+  return m[1];
+};
+const TITLE = src.match(/<title>([^<]*)<\/title>/)[1];
+const PDF = path.join(here, meta('pdf-output'));
+const FOOTER = meta('pdf-footer');
 
 async function loadChromium() {
   try { return (await import('playwright-core')).chromium; } catch { /* aşağıda PW_MODULES denenir */ }
@@ -52,17 +62,20 @@ const COMMITS = log('%h%x09%ad%x09%s', ['--date=format:%d.%m.%Y']).split('\n').m
   return `    <tr><td><code>${h}</code></td><td class="c">${d}</td><td>${esc(s)}</td></tr>`;
 }).join('\n');
 
-function size(p) {
-  const b = fs.statSync(path.join(out, p)).size;
-  if (b >= 1048576) return num(b / 1048576, 2) + ' MB';
-  return num(b / 1024, b < 102400 ? 1 : 0) + ' KB';
-}
+const bytes = (b) => (b >= 1048576 ? num(b / 1048576, 2) + ' MB' : num(b / 1024, b < 102400 ? 1 : 0) + ' KB');
+const size = (p) => bytes(fs.statSync(path.join(out, p)).size);
 const lines = (list) => num(list.split(',').reduce((s, p) => s + (fs.readFileSync(path.join(out, p.trim()), 'utf8').match(/\n/g) || []).length, 0));
+// klasördeki tüm dosyalar (alt klasörler dahil): {{DIR:yol}} toplam boyut, {{FILES:yol}} dosya sayısı
+const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]));
+const dirFiles = (p) => walk(path.join(out, p));
 
-let html = fs.readFileSync(path.join(here, 'dokuman.html'), 'utf8')
+let html = src
   .replace('{{FONTS}}', () => fontFaces.join('\n'))
   .replace(/\{\{VERSION\}\}/g, VERSION).replace(/\{\{DATE\}\}/g, DATE).replace('{{COMMITS}}', () => COMMITS)
+  .replace(/\{\{COMMITCOUNT\}\}/g, () => git('rev-list', '--count', 'HEAD'))
   .replace(/\{\{KB:([^}]+)\}\}/g, (m, p) => size(p))
+  .replace(/\{\{DIR:([^}]+)\}\}/g, (m, p) => bytes(dirFiles(p).reduce((s, f) => s + fs.statSync(f).size, 0)))
+  .replace(/\{\{FILES:([^}]+)\}\}/g, (m, p) => num(dirFiles(p).length))
   .replace(/\{\{LINES:([^}]+)\}\}/g, (m, l) => lines(l));
 const left = html.match(/\{\{(?!\.\.\.)[^}]*\}\}/g);
 if (left) throw new Error('doldurulmamış yer tutucu: ' + left.join(', '));
@@ -79,8 +92,8 @@ const tocHtml = (pages) => heads.map((h, i) =>
 const withToc = (pages) => html.replace('<ol id="tocList"></ol>', `<ol id="tocList">\n${tocHtml(pages)}\n</ol>`);
 const inject = (h, style) => h.replace('</head>', `<style>${style}</style>\n</head>`);
 
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dokuman-'));
-const page_html = path.join(here, '_build.html');                        // göreli görsel yolları (img/) için docs/ içinde
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'belge-'));
+const page_html = path.join(here, `_build_${path.basename(SRC)}`);       // göreli görsel yolları (img/) için docs/ içinde
 const chromium = await loadChromium();
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
 const page = await browser.newPage();
@@ -118,9 +131,8 @@ fs.rmSync(page_html);
 // ---- 3. kapak + gövde, yer imleri ve belge bilgileri (kapak 1. sayfa olduğu için gövde sayfaları +1)
 const info = {
   title: TITLE, date: PDF_DATE,
-  subject: 'Geliştirici kılavuzu: veri hattı, görüntüleyici mimarisi, gölgelendiriciler, mühendislik modülleri, test ve yeniden üretim',
-  keywords: 'Supremo 85, uPVC, three.js, WebGL, Blender, KTX2, kiosk, EN ISO 10077-2',
-  creator: `dokuman.html (${VERSION}) → build_pdf.mjs`,
+  subject: meta('description'), keywords: meta('keywords'),
+  creator: `${path.basename(SRC)} (${VERSION}) → build_pdf.mjs`,
   toc: [[1, 'Kapak', 1], [1, 'İçindekiler', 2], ...heads.map((h, i) => [h.level, `${h.no} ${h.title}`, pages[i] + 1])],
 };
 fs.writeFileSync(path.join(tmp, 'info.json'), JSON.stringify(info));

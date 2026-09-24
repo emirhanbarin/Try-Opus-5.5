@@ -1,4 +1,4 @@
-"""Teknik dokümantasyon PDF'inin son işlemi (PyMuPDF). build_pdf.mjs çağırır.
+"""Belge PDF'lerinin (teknik dokümantasyon, yeniden yapım kılavuzu) son işlemi (PyMuPDF). build_pdf.mjs çağırır.
 
   pdf_post.py outline <gövde.pdf>
       Chromium'un başlıklardan kurduğu ana hattı yazar (JSON: [[düzey, başlık, sayfa], …]); build_pdf.mjs içindekiler
