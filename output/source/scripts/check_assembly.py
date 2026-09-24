@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-"""3D assembly check: interference volume and clearance between all part pairs."""
+"""3D assembly check: interference volume and clearance between all part pairs.
+Env: BLEND (default supremo85.blend), OUT (default assembly_check.json)"""
 import bpy, bmesh, os, sys, json, itertools
 from mathutils.bvhtree import BVHTree
 from mathutils import Vector
 
 SRC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-bpy.ops.wm.open_mainfile(filepath=os.path.join(SRC, 'supremo85.blend'))
+bpy.ops.wm.open_mainfile(filepath=os.path.join(SRC, os.environ.get('BLEND', 'supremo85.blend')))
 obs = [o for o in bpy.context.scene.objects if o.type == 'MESH']
 MM = 1000.0
 
@@ -67,5 +68,5 @@ for a, b in itertools.combinations(sorted(data), 2):
                        inter_volume_mm3=None if vol is None else round(vol, 4)))
 for r in report:
     print('{a:26s} {b:26s} tri_ov={tri_overlaps:5d} dist={min_dist_mm} vol={inter_volume_mm3}'.format(**r))
-json.dump(report, open(os.path.join(SRC, 'assembly_check.json'), 'w'), indent=1)
+json.dump(report, open(os.path.join(SRC, os.environ.get('OUT', 'assembly_check.json')), 'w'), indent=1)
 print('closed meshes:', {n: closed(b) for n, b in data.items()})

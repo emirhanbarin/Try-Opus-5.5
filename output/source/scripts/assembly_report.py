@@ -2,7 +2,8 @@
 """Montaj denetimi raporu (2D kesit + 3D).
 2D: tüm parça çiftleri için kesişim alanı ve en büyük gömülme derinliği (içine sığan en büyük daire çapı).
 3D: assembly_check.json (check_assembly.py) sonuçlarını özetler.
-Çıktı: ../montaj_denetimi.md"""
+Çıktı: ../montaj_denetimi.md
+Env: CHECK (varsayılan assembly_check.json), OUT (varsayılan montaj_denetimi.md), TITLE (başlık eki)"""
 import json, itertools, os
 import numpy as np
 import shapely
@@ -33,8 +34,8 @@ for a, b in itertools.combinations(sorted(P), 2):
                 depth = max(depth, 2 * c.length)
     rows.append((names[a], names[b], dist, inter.area, depth))
 
-chk = json.load(open(os.path.join(SRC, 'assembly_check.json')))
-out = ['# Montaj denetimi', '',
+chk = json.load(open(os.path.join(SRC, os.environ.get('CHECK', 'assembly_check.json'))))
+out = ['# Montaj denetimi' + os.environ.get('TITLE', ''), '',
        'Kesit geometrisi PDF s.9 vektörlerinden çıkarılmıştır. Temas eden tüm parça çiftleri (aralık ≤ 0,05 mm):', '',
        '| Parça A | Parça B | Aralık (mm) | Kesişim alanı (mm²) | En büyük gömülme (mm) |', '|---|---|---:|---:|---:|']
 for r in sorted(rows, key=lambda r: -r[4]):
@@ -50,5 +51,7 @@ for r in chk:
         out.append(f"| {r['a']} | {r['b']} | {r['tri_overlaps']} | {r['min_dist_mm']} | {r['inter_volume_mm3']} |")
 out += ['', 'Vidalar (3,9×19 YHB) yüzeye sıfır oturtulmuş; delikler vida zarfıyla açıldığından PVC ve çelikle kesişim yoktur (0,0035–0,0115 mm aralık).',
         'Rüzgarlık pimleri 4 mm yarıkta 0,15 mm boşlukla durur, tırnak yakası dış duvarın arkasına geçer.']
-open(os.path.join(SRC, 'montaj_denetimi.md'), 'w').write('\n'.join(out) + '\n')
+if os.environ.get('NOTE'):
+    out += ['', os.environ['NOTE']]
+open(os.path.join(SRC, os.environ.get('OUT', 'montaj_denetimi.md')), 'w').write('\n'.join(out) + '\n')
 print('\n'.join(out[:40]))

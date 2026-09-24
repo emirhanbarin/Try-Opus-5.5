@@ -6,6 +6,10 @@ AO atlas (2048^2), two bakes:
   - parça AO   : only_local (self occlusion) -> stays correct in exploded view
 Extruded parts are UV-projected with the profile axis compressed x0.25, giving
 ~4x finer texels across the section than along the 300 mm length.
+
+Env: BLEND (default supremo85.blend), PREFIX (bake/<PREFIX>ao_*.exr), GLB_OUT (bake/<GLB_OUT>)
+CORNER=1: 45° köşe numunesi (build_corner.py). Alt kol x, yan kol z ekseni boyunca; gönye düzleminde
+(x = z) UV dikişi, her kol kendi ekseninde x0,25 sıkıştırılır; folyo yüz maskesi ikinci UV'ye (FOIL) yazılır.
 """
 import bpy, bmesh, os, sys, math, time
 from mathutils import Matrix
@@ -14,11 +18,16 @@ SRC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RES = int(os.environ.get('AO_RES', 2048))
 SAMPLES = int(os.environ.get('AO_SAMPLES', 32))
 AO_DIST = float(os.environ.get('AO_DIST', 0.015))
-bpy.ops.wm.open_mainfile(filepath=os.path.join(SRC, 'supremo85.blend'))
+CORNER = os.environ.get('CORNER') == '1'
+BLEND = os.environ.get('BLEND', 'supremo85.blend')
+PREFIX = os.environ.get('PREFIX', '')
+GLB_OUT = os.environ.get('GLB_OUT', 'supremo85_raw.glb')
+bpy.ops.wm.open_mainfile(filepath=os.path.join(SRC, BLEND))
 sc = bpy.context.scene
 obs = [o for o in sc.objects if o.type == 'MESH']
 GLASS = {'cam_1', 'cam_2', 'cam_3'}
-NON_EXTRUDED = {'kasa_takviye_vidalari', 'kanat_takviye_vidalari', 'drenaj_kapagi'}
+NON_EXTRUDED = {'kasa_takviye_vidalari', 'kanat_takviye_vidalari', 'drenaj_kapagi',
+                'kasa_vidasi_alt', 'kasa_vidasi_yan', 'kanat_vidasi_alt', 'kanat_vidasi_yan'}
 targets = [o for o in obs if o.name not in GLASS]
 
 # ---------------------------------------------------------------- UV atlas
@@ -30,8 +39,8 @@ L_HALF = 0.150
 FEAT = [(14.68, 43.52), (0.0, 30.22), (5.0, 30.22), (10.5, 30.22), (34.18, 93.51), (25.36, 73.11)] + \
        [(53.0, y) for y in range(7, 27, 2)] + [(72.39, y) for y in range(75, 95, 2)]
 
-def sec2d(co):  # blender coords (m) -> section mm
-    return (52.25 - co.y * 1000.0, co.z * 1000.0)
+def sec2d(co, ax=0):  # blender coords (m) -> section mm (yan kolda kesit yüksekliği x'tir)
+    return (52.25 - co.y * 1000.0, (co.x if ax == 2 else co.z) * 1000.0)
 
 def mark_seams(o):
     bm = bmesh.new(); bm.from_mesh(o.data)
@@ -39,6 +48,10 @@ def mark_seams(o):
     hole_idx = {i for i, m in enumerate(o.data.materials) if m and m.name.startswith('HOLE')}
     def cls(f):
         if f.material_index in hole_idx: return 2
+        if CORNER:   # 0/1: alt kol yan/kapak, 10/11: yan kol yan/kapak (gönye düzlemi dikiş olur)
+            c = f.calc_center_median()
+            if c.x >= c.z: return 1 if abs(f.normal.x) > 0.35 else 0
+            return 11 if abs(f.normal.z) > 0.35 else 10
         return 1 if abs(f.normal.x) > 0.35 else 0
     fc = {f.index: cls(f) for f in bm.faces}
     for e in bm.edges:
@@ -47,22 +60,24 @@ def mark_seams(o):
     # connected components of side faces (class 0) through non-seam edges
     seen = set(); ncut = 0
     for f0 in bm.faces:
-        if fc[f0.index] != 0 or f0.index in seen: continue
+        if fc[f0.index] not in (0, 10) or f0.index in seen: continue
+        c0 = fc[f0.index]; ax = 0 if c0 == 0 else 2
         comp = []; stack = [f0]; seen.add(f0.index)
         while stack:
             f = stack.pop(); comp.append(f)
             for e in f.edges:
                 if e.seam: continue
                 for g in e.link_faces:
-                    if g.index not in seen and fc[g.index] == 0:
+                    if g.index not in seen and fc[g.index] == c0:
                         seen.add(g.index); stack.append(g)
         verts = {v for f in comp for v in f.verts}
         edges = {e for f in comp for e in f.edges}
-        xmin = min(v.co.x for v in verts); xmax = max(v.co.x for v in verts)
-        cand = [v for v in verts if v.co.x < xmin + 1e-6]
-        goal = {v for v in verts if v.co.x > xmax - 1e-6}
+        xmin = min(v.co[ax] for v in verts); xmax = max(v.co[ax] for v in verts)
+        miter = [v for v in verts if abs(v.co.x - v.co.z) < 1e-7] if CORNER else []
+        cand = miter or [v for v in verts if v.co[ax] < xmin + 1e-6]
+        goal = {v for v in verts if v.co[ax] > xmax - 1e-6}
         def score(v):
-            p = sec2d(v.co)
+            p = sec2d(v.co, ax)
             return min((p[0] - a) ** 2 + (p[1] - b) ** 2 for a, b in FEAT)
         start_v = max(cand, key=score)
         # Dijkstra along component edges, preferring X-aligned edges
@@ -72,7 +87,7 @@ def mark_seams(o):
             a, b = e.verts
             d = (a.co - b.co); ln = d.length
             if ln <= 0: continue
-            cost = ln * (1.0 + 20.0 * (1.0 - abs(d.x) / ln))
+            cost = ln * (1.0 + 20.0 * (1.0 - abs(d[ax]) / ln))
             adj.setdefault(a, []).append((b, e, cost)); adj.setdefault(b, []).append((a, e, cost))
         dist = {start_v: 0.0}; prev = {}; pq = [(0.0, id(start_v), start_v)]; hit = None
         while pq:
@@ -89,13 +104,22 @@ def mark_seams(o):
     bm.to_mesh(o.data); bm.free()
     return ncut
 
+def squash(me, k):
+    """Köşe: alt kolda (x >= z) x, yan kolda z ekseni gönyeden itibaren k ile ölçeklenir (x = z sabit)."""
+    import numpy as np
+    co = np.empty(len(me.vertices) * 3); me.vertices.foreach_get('co', co); co = co.reshape(-1, 3)
+    x, z = co[:, 0].copy(), co[:, 2].copy(); s = x >= z
+    co[s, 0] = z[s] + k * (x[s] - z[s]); co[~s, 2] = x[~s] + k * (z[~s] - x[~s])
+    me.vertices.foreach_set('co', co.ravel()); me.update()
+
 for o in targets:
     me = o.data
     while me.uv_layers: me.uv_layers.remove(me.uv_layers[0])
     me.uv_layers.new(name='AO')
     if o.name not in SMART:
         mark_seams(o)
-    if o.name not in NON_EXTRUDED: me.transform(SQ)
+    if o.name not in NON_EXTRUDED:
+        squash(me, 0.25) if CORNER else me.transform(SQ)
 
 def edit_select(objs):
     bpy.ops.object.mode_set(mode='OBJECT') if bpy.context.object and bpy.context.object.mode != 'OBJECT' else None
@@ -119,7 +143,8 @@ bpy.ops.uv.pack_islands(udim_source='CLOSEST_UDIM', rotate=True, rotate_method='
                         merge_overlap=False, margin_method='FRACTION', margin=3.0 / RES, shape_method='CONCAVE')
 bpy.ops.object.mode_set(mode='OBJECT')
 for o in targets:
-    if o.name not in NON_EXTRUDED: o.data.transform(UNSQ)
+    if o.name not in NON_EXTRUDED:
+        squash(o.data, 4.0) if CORNER else o.data.transform(UNSQ)
 print('uv done %.1fs' % (time.time() - t0))
 
 # UV utilisation
@@ -183,7 +208,7 @@ def bake(key, local):
     bpy.ops.object.bake(type='EMIT', margin=6, use_clear=True)
     print('baked', key, '%.1fs' % (time.time() - t))
     im = imgs[key]
-    im.filepath_raw = os.path.join(SRC, 'bake', 'ao_%s.exr' % key)
+    im.filepath_raw = os.path.join(SRC, 'bake', '%sao_%s.exr' % (PREFIX, key))
     im.file_format = 'OPEN_EXR'
     im.save()
 
@@ -195,11 +220,24 @@ bake('self', True)
 for o in obs:
     o.hide_render = False
     o.data.materials.clear()
-bpy.ops.wm.save_as_mainfile(filepath=os.path.join(SRC, 'supremo85.blend'), compress=True)
+bpy.ops.wm.save_as_mainfile(filepath=os.path.join(SRC, BLEND), compress=True)
+
+# folyo maskesi (köşe): yüz özniteliği 'foil' -> ikinci UV (u = 1 folyo, 0 çekirdek)
+if CORNER:
+    for o in obs:
+        me = o.data; att = me.attributes.get('foil')
+        if att is None or att.domain != 'FACE': continue
+        vals = [0] * len(me.polygons); att.data.foreach_get('value', vals)
+        if not any(vals): continue
+        uvl = me.uv_layers.new(name='FOIL')
+        for p in me.polygons:
+            f = float(vals[p.index])
+            for li in p.loop_indices: uvl.data[li].uv = (f, 0.0)
+        print('foil uv', o.name, sum(vals), '/', len(vals))
 
 # ---------------------------------------------------------------- glTF export (geometry + AO UVs)
 bpy.ops.object.select_all(action='DESELECT')
-bpy.ops.export_scene.gltf(filepath=os.path.join(SRC, 'bake', 'supremo85_raw.glb'), export_format='GLB',
+bpy.ops.export_scene.gltf(filepath=os.path.join(SRC, 'bake', GLB_OUT), export_format='GLB',
                           export_apply=True, export_texcoords=True, export_normals=True, export_materials='NONE',
                           export_yup=True, export_extras=False, export_cameras=False, export_lights=False)
 print('exported')
