@@ -4,3 +4,4 @@ __pycache__/
 *.blend1
 *.pyc
 node_modules/
+output/source/env/*.npy

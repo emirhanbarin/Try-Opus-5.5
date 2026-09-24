@@ -1,0 +1,311 @@
+// PBR malzemeler + shader eklemeleri (köşe numunesi)
+//  - AO atlası: R = montaj AO, A = parça AO (patlatma/gizleme durumunda karışır)
+//  - Kesit kapağı: kırpma düzleminde görünen arka yüzler düz renk + tarama ile boyanır
+//  - Vurgu: üzerine gelme / seçim için fresnel kenar parlaması
+//  - Mikro yüzey: PVC'de ekstrüzyon kalıp izleri (kol ekseni boyunca), EPDM'de mat gren (yakın planda)
+//  - Kaynak dikişi: gönye düzleminde (x = y, nesne uzayı) ince çizgi; çıtada alın birleşimi aralığı
+//  - Folyo / renk: ikinci UV'deki folyo maskesi (dış kontur yüzleri) + ahşap desen (kol boyunca damar)
+import * as THREE from '../vendor/three-bundle.min.js';
+
+export const shared = {
+  uClip: { value: new THREE.Vector4(1, 0, 0, 1e6) },   // xyz = normal, w = constant (three.js Plane)
+  uClipOn: { value: 0 },
+  uAoMix: { value: 0 },
+  uAoStrength: { value: 1 },
+  uMicro: { value: 1 },                                   // mikro yüzey şiddeti (düşük kademede 0)
+  uSeam: { value: 1 },                                    // kaynak dikişi görünürlüğü
+  uFinish: { value: new THREE.Vector4(0, 0.34, 1, 0) },   // x: 0 yok · 1 düz renk · 2 ahşap; y: pürüzlülük; z: vernik çarpanı; w: kabartma
+  uFinishA: { value: new THREE.Color(1, 1, 1) },
+  uFinishB: { value: new THREE.Color(1, 1, 1) },
+  uWood: { value: null },
+};
+
+const srgb = (hex) => new THREE.Color().setHex(hex, THREE.LinearSRGBColorSpace); // ham sRGB (çıkış sonrası)
+
+// kesit kapağı renkleri (ekranda doğrudan sRGB)
+const CAP = {
+  pvc:     { c: 0xdfe3e8, h: 0x98a1ab, s: 1.6, a: 1 },
+  cover:   { c: 0xdfe3e8, h: 0x98a1ab, s: 1.6, a: 1 },
+  steel:   { c: 0x8f969d, h: 0x5d646b, s: 0.9, a: -1 },
+  epdm:    { c: 0x2b2b2b, h: 0x454545, s: 0.8, a: 1 },
+  tpe:     { c: 0x303030, h: 0x4a4a4a, s: 0.8, a: -1 },
+  alu:     { c: 0xa9aeb4, h: 0x7d838a, s: 0.7, a: 1 },
+  desic:   { c: 0xcdb98e, h: 0xa8966c, s: 0.5, a: -1 },
+  sealant: { c: 0x2a2a2a, h: 0x2a2a2a, s: 1, a: 1 },
+  plastic: { c: 0x4f739b, h: 0x3b5a7c, s: 1.1, a: -1 },
+  screw:   { c: 0xb9bec3, h: 0x8a9096, s: 0.5, a: 1 },
+};
+
+const NOISE = `
+float supH(float n){ return fract(sin(n) * 43758.5453123); }
+float supVN(float x){ float i = floor(x); float f = fract(x); f = f * f * (3.0 - 2.0 * f); return mix(supH(i), supH(i + 1.0), f); }
+float supVN3(vec3 p){
+  vec3 i = floor(p); vec3 f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  float n = dot(i, vec3(1.0, 57.0, 113.0));
+  return mix(mix(mix(supH(n), supH(n + 1.0), f.x), mix(supH(n + 57.0), supH(n + 58.0), f.x), f.y),
+             mix(mix(supH(n + 113.0), supH(n + 114.0), f.x), mix(supH(n + 170.0), supH(n + 171.0), f.x), f.y), f.z);
+}`;
+
+function patch(material, key, opts = {}) {
+  const cap = CAP[key] || CAP.pvc;
+  material.userData.u = {
+    uHi: { value: 0 },
+    uHiColor: { value: srgb(0x5cc8ff) },
+    uCapColor: { value: srgb(cap.c) },
+    uCapHatch: { value: srgb(cap.h) },
+    uHatch: { value: new THREE.Vector2(cap.s, cap.a) },
+    uSeamK: { value: opts.seam || 0 },
+  };
+  const defs = {};
+  if (opts.foil) defs.SUP_FOIL = '';
+  if (opts.seam) defs.SUP_SEAM = '';
+  if (opts.die) defs.SUP_DIE = '';
+  if (opts.grain) defs.SUP_GRAIN = '';
+  if (opts.triplanarMap) defs.SUP_TRI = '';
+  material.defines = Object.assign(material.defines || {}, defs);
+
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, shared, material.userData.u);
+    if (opts.triplanarMap) shader.uniforms.uSpangle = { value: opts.triplanarMap };
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>
+varying vec3 vWPos; varying vec3 vWNrm; varying vec3 vOPos; varying vec3 vONrm;
+#ifdef SUP_FOIL
+#ifndef USE_UV1
+attribute vec2 uv1;
+#endif
+varying float vFoil;
+#endif`)
+      .replace('#include <fog_vertex>', `#include <fog_vertex>
+vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
+vWNrm = normalize(mat3(modelMatrix) * objectNormal);
+vOPos = transformed; vONrm = objectNormal;
+#ifdef SUP_FOIL
+vFoil = uv1.x;
+#endif`);
+
+    let fs = shader.fragmentShader;
+    fs = fs.replace('#include <common>', `#include <common>
+varying vec3 vWPos; varying vec3 vWNrm; varying vec3 vOPos; varying vec3 vONrm;
+#ifdef SUP_FOIL
+varying float vFoil;
+uniform sampler2D uWood;
+#endif
+uniform vec4 uClip; uniform float uClipOn; uniform float uAoMix; uniform float uAoStrength;
+uniform float uHi; uniform vec3 uHiColor; uniform vec3 uCapColor; uniform vec3 uCapHatch; uniform vec2 uHatch;
+uniform float uMicro; uniform float uSeam; uniform float uSeamK;
+uniform vec4 uFinish; uniform vec3 uFinishA; uniform vec3 uFinishB;
+#ifdef SUP_TRI
+uniform sampler2D uSpangle;
+#endif
+${NOISE}
+float capHatch(vec3 wp){
+  vec3 n = abs(uClip.xyz); vec2 p;
+  if (n.x >= n.y && n.x >= n.z) p = wp.zy; else if (n.y >= n.z) p = wp.xz; else p = wp.xy;
+  p *= 1000.0;
+  // ekrandaki piksel boyutuna göre 2'nin katları halinde aralık (yakınlaştırmada kaymadan sıklaşır)
+  float mmPerPx = max(fwidth(p.x), fwidth(p.y));
+  float spacing = uHatch.x * exp2(max(0.0, ceil(log2(7.0 * mmPerPx / uHatch.x))));
+  float s = (p.x + uHatch.y * p.y) / spacing;
+  float w = fwidth(s);
+  float d = abs(fract(s) - 0.5);
+  return 1.0 - smoothstep(0.055 - w, 0.055 + w, 0.5 - d);
+}`);
+    // iki kanallı AO + kesite yakın yüzeylerde AO gevşetme
+    const aoChunk = THREE.ShaderChunk.aomap_fragment.replace(
+      'float ambientOcclusion = ( texture2D( aoMap, vAoMapUv ).r',
+      'vec4 aoTexel = texture2D( aoMap, vAoMapUv );\n\tfloat ambientOcclusion = ( ( mix( aoTexel.r, aoTexel.a, uAoMix ) * 0.86 + 0.14 )'
+    ).replace('float ambientOcclusion = (', `float clipRelief = uClipOn > 0.5 ? smoothstep( 0.0, 0.018, abs( dot( vWPos, uClip.xyz ) + uClip.w ) ) : 1.0;
+	float ambientOcclusion = mix( 1.0, (`).replace('* aoMapIntensity + 1.0;', '* aoMapIntensity + 1.0, clipRelief * uAoStrength );');
+    fs = fs.replace('#include <aomap_fragment>', aoChunk);
+
+    // renk: kol ekseni, kalıp izi, folyo, kaynak dikişi, galvaniz deseni
+    fs = fs.replace('#include <color_fragment>', `#include <color_fragment>
+      vec3 supN0 = normalize(vONrm);
+      bool supLegX = vOPos.x >= vOPos.y;                       // alt kol: X, yan kol: Y ekseni
+      vec3 supAx = supLegX ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 1.0, 0.0);
+      float supSide = 1.0 - smoothstep(0.35, 0.6, abs(dot(supN0, supAx)));
+      float supPx = length(fwidth(vOPos));                     // piksel başına nesne boyu (m)
+      float supDie = 0.5; vec3 supT = vec3(0.0); float supAmp = 0.0;
+#ifdef SUP_DIE
+      supT = cross(supAx, supN0); float supTl = length(supT); supT = supTl > 1e-4 ? supT / supTl : vec3(0.0);
+      float supC = dot(vOPos, supT) * 1000.0;                  // mm
+      supDie = supVN(supC * 2.3) * 0.65 + supVN(supC * 9.1 + 17.0) * 0.35;
+      supAmp = (1.0 - smoothstep(0.00008, 0.00028, supPx)) * uMicro * supSide;
+#endif
+      float supFoil = 0.0; float supGrain = 0.5;
+#ifdef SUP_FOIL
+      supFoil = step(0.5, vFoil) * step(0.5, uFinish.x);
+      if (supFoil > 0.5) {
+        vec3 fc = uFinishA;
+        if (uFinish.x > 1.5) {
+          float along = supLegX ? vOPos.x : vOPos.y;
+          float across = supLegX ? (abs(supN0.y) > abs(supN0.z) ? vOPos.z : vOPos.y)
+                                 : (abs(supN0.x) > abs(supN0.z) ? vOPos.z : vOPos.x);
+          supGrain = texture2D(uWood, vec2(along * 2.0, across * 8.0)).r;     // 0,5 m × 0,125 m döşeme
+          fc = mix(uFinishB, uFinishA, supGrain);
+        }
+        diffuseColor.rgb = fc;
+      }
+#endif
+      float supSeam = 0.0;
+#ifdef SUP_SEAM
+      {
+        float d = abs(vOPos.x - vOPos.y) * 0.70710678;         // gönye düzlemine uzaklık (m)
+        float px = fwidth(d);
+        float w = max(0.00012, px * 1.25);                     // en az ~1 piksel: çizgi kesintisiz kalır
+        supSeam = (1.0 - smoothstep(0.0, w, d)) * uSeam * clamp(0.00035 / max(px, 1e-7), 0.35, 1.0);
+        diffuseColor.rgb *= 1.0 - supSeam * (uSeamK > 1.5 ? 0.6 : 0.3);
+      }
+#endif
+#ifdef SUP_TRI
+      // galvaniz çiçeklenme deseni (üçlü düzlem, dünya uzayı; baskın iki düzlem, tek örnek)
+      vec3 tw = abs(vWNrm);
+      vec3 sp = vWPos * (1000.0 / 56.0);
+      vec2 uvA = tw.x > tw.y ? (tw.x > tw.z ? sp.yz : sp.xy) : (tw.y > tw.z ? sp.xz : sp.xy);
+      float spg = texture2D(uSpangle, uvA).r;
+      diffuseColor.rgb *= 0.86 + 0.2 * spg;
+#endif`)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+      roughnessFactor = mix(roughnessFactor, uFinish.y, supFoil);
+#ifdef SUP_DIE
+      roughnessFactor *= 1.0 + (supDie - 0.5) * 0.18 * supAmp;
+#endif
+#ifdef SUP_GRAIN
+      roughnessFactor *= 0.9 + 0.2 * supVN3(vOPos * 2600.0) * (1.0 - smoothstep(0.0001, 0.0004, supPx)) * uMicro;
+#endif
+#ifdef SUP_TRI
+      roughnessFactor = clamp(roughnessFactor * (1.35 - 0.7 * spg), 0.12, 1.0);
+#endif
+      roughnessFactor = clamp(roughnessFactor + supSeam * 0.22, 0.04, 1.0);`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+#ifdef SUP_DIE
+      if (supAmp > 0.001) {
+        vec3 tv = (viewMatrix * vec4(supT, 0.0)).xyz;          // nesne ekseni = dünya ekseni (model yalnızca ötelenir)
+        normal = normalize(normal + tv * (supDie - 0.5) * 0.06 * supAmp);
+      }
+#endif
+#ifdef SUP_FOIL
+      float supBumpK = uFinish.w * (1.0 - smoothstep(0.00006, 0.00026, supPx));
+      if (supFoil > 0.5 && supBumpK > 0.001) {
+        vec2 dHdxy = vec2(dFdx(supGrain), dFdy(supGrain)) * supBumpK * 0.6;
+        vec3 vSigmaX = dFdx(-vViewPosition); vec3 vSigmaY = dFdy(-vViewPosition);
+        vec3 vNb = normal;
+        vec3 R1 = cross(vSigmaY, vNb); vec3 R2 = cross(vNb, vSigmaX);
+        float fDet = dot(vSigmaX, R1) * faceDirection;
+        vec3 vGrad = sign(fDet) * (dHdxy.x * R1 + dHdxy.y * R2);
+        normal = normalize(abs(fDet) * vNb - vGrad);
+      }
+#endif`)
+      .replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>
+#ifdef USE_CLEARCOAT
+      material.clearcoat *= mix(1.0, uFinish.z, supFoil);
+#endif`);
+
+    fs = fs.replace('#include <dithering_fragment>', `#include <dithering_fragment>
+  if ( !gl_FrontFacing ) {
+    vec3 cc = mix( uCapColor, uCapHatch, capHatch( vWPos ) );
+    cc = mix( cc, uHiColor, uHi * 0.35 );
+    gl_FragColor = vec4( cc, 1.0 );
+  } else if ( uHi > 0.0 ) {
+    vec3 vdir = normalize( vViewPosition );
+    float fr = pow( 1.0 - clamp( abs( dot( normalize( normal ), vdir ) ), 0.0, 1.0 ), 2.2 );
+    gl_FragColor.rgb = mix( gl_FragColor.rgb, uHiColor, uHi * ( 0.08 + 0.5 * fr ) );
+  }`);
+    shader.fragmentShader = fs;
+  };
+  const cacheKey = 'kose-' + key + Object.keys(defs).join('');
+  material.customProgramCacheKey = () => cacheKey;
+  return material;
+}
+
+function patchGlass(material) {
+  material.userData.u = { uHi: { value: 0 }, uHiColor: { value: srgb(0x5cc8ff) } };
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, shared, material.userData.u);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWNrmG;')
+      .replace('#include <fog_vertex>', '#include <fog_vertex>\nvWNrmG = normalize(mat3(modelMatrix) * objectNormal);');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWNrmG;\nuniform float uHi; uniform vec3 uHiColor;')
+      .replace('#include <dithering_fragment>', `#include <dithering_fragment>
+  // Low-E kaplama: eğik bakışta hafif yeşil-mavi yansıma tonu
+  float fres = pow( 1.0 - abs( dot( normalize( vNormal ), normalize( vViewPosition ) ) ), 3.0 );
+  gl_FragColor.rgb = mix( gl_FragColor.rgb, gl_FragColor.rgb * vec3( 0.86, 1.0, 0.97 ), 0.5 + 0.5 * fres );
+  // cam kenarları (kesim yüzleri) yeşilimsi ve daha opak
+  float edge = 1.0 - abs( vWNrmG.z );
+  gl_FragColor.rgb = mix( gl_FragColor.rgb, vec3( 0.36, 0.55, 0.48 ), edge * 0.75 );
+  gl_FragColor.a = mix( gl_FragColor.a, 0.9, edge );
+  gl_FragColor.rgb = mix( gl_FragColor.rgb, uHiColor, uHi * 0.35 );
+  gl_FragColor.a = max( gl_FragColor.a, uHi * 0.35 );`);
+  };
+  material.customProgramCacheKey = () => 'kose-glass';
+  return material;
+}
+
+// tier: 'high' (gerçek GPU: EPDM sheen) | 'low'
+export function createMaterial(key, tex, def = {}, tier = 'high') {
+  const common = { aoMap: tex.ao, aoMapIntensity: 1.0, side: THREE.DoubleSide };
+  let m;
+  switch (key) {
+    case 'pvc':
+    case 'cover':
+      m = new THREE.MeshPhysicalMaterial({ ...common, color: 0xf3f3f0, roughness: 0.34, metalness: 0,
+        clearcoat: 0.35, clearcoatRoughness: 0.28, specularIntensity: 0.6 });
+      return patch(m, key, { foil: !!def.foil, seam: def.seam || 0, die: key === 'pvc' });
+    case 'steel':
+      m = new THREE.MeshStandardMaterial({ ...common, color: 0xc2c7cc, roughness: 0.36, metalness: 1.0 });
+      return patch(m, key, { triplanarMap: tex.spangle });
+    case 'epdm':
+    case 'tpe':
+      if (tier === 'high') {
+        m = new THREE.MeshPhysicalMaterial({ ...common, color: key === 'epdm' ? 0x171717 : 0x1b1b1b, roughness: key === 'epdm' ? 0.74 : 0.58,
+          metalness: 0, sheen: 0.35, sheenRoughness: 0.7, sheenColor: 0x3a3d42, specularIntensity: 0.5 });
+      } else {
+        m = new THREE.MeshStandardMaterial({ ...common, color: key === 'epdm' ? 0x171717 : 0x1b1b1b, roughness: key === 'epdm' ? 0.74 : 0.58, metalness: 0 });
+      }
+      return patch(m, key, { grain: true });
+    case 'alu':
+      m = new THREE.MeshStandardMaterial({ ...common, color: 0xbfc4ca, roughness: 0.42, metalness: 1.0 });
+      return patch(m, key);
+    case 'desic':
+      m = new THREE.MeshStandardMaterial({ ...common, color: 0xd6c296, roughness: 0.95, metalness: 0 });
+      return patch(m, key, { grain: true });
+    case 'sealant':
+      m = new THREE.MeshStandardMaterial({ ...common, color: 0x1f1f1f, roughness: 0.55, metalness: 0 });
+      return patch(m, key);
+    case 'plastic':
+      m = new THREE.MeshStandardMaterial({ ...common, color: 0x4b6f98, roughness: 0.46, metalness: 0 });
+      return patch(m, key);
+    case 'screw':
+      m = new THREE.MeshStandardMaterial({ ...common, color: 0xd9dde2, roughness: 0.24, metalness: 1.0 });
+      return patch(m, key);
+    case 'glass':
+      m = new THREE.MeshPhysicalMaterial({ color: 0xeef6f3, roughness: 0.03, metalness: 0, transparent: true, opacity: 0.14,
+        side: THREE.DoubleSide, depthWrite: false, specularIntensity: 1.0, ior: 1.52, envMapIntensity: 1.4 });
+      m.forceSinglePass = true;
+      return patchGlass(m);
+    default:
+      return patch(new THREE.MeshStandardMaterial({ ...common, color: 0xcccccc }), 'pvc');
+  }
+}
+
+// Hayalet (x-ray) görünüm: bağlam parçaları için paylaşılan tek malzeme (fresnel kenar parlaması)
+export function createGhostMaterial() {
+  return new THREE.ShaderMaterial({
+    uniforms: { uColor: { value: new THREE.Color(0xa8dcff) }, uOpacity: { value: 0.07 }, uEdge: { value: 0.9 } },
+    vertexShader: `varying vec3 vN; varying vec3 vV;
+      void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); vN = normalize(normalMatrix * normal); vV = -mv.xyz; gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `uniform vec3 uColor; uniform float uOpacity; uniform float uEdge; varying vec3 vN; varying vec3 vV;
+      void main(){ float f = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 2.4);
+        gl_FragColor = vec4(uColor * (0.55 + 0.6 * f), clamp(uOpacity + uEdge * f * 0.32, 0.0, 0.85)); }`,
+    transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.NormalBlending, toneMapped: false,
+  });
+}
+
+// Renk / folyo seçimi: FINISHES girdisine göre ortak uniform'lar
+export function applyFinish(f) {
+  shared.uFinish.value.set(f.mode, f.rough, f.coat, f.bump);
+  shared.uFinishA.value.set(f.a);   // onaltılık sRGB -> doğrusal çalışma uzayı (renk yönetimi)
+  shared.uFinishB.value.set(f.b);
+}

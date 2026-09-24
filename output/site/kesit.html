@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Supremo 85 · 3B Profil Görüntüleyici</title>
+<meta name="description" content="Supremo 85 uPVC pencere sisteminin kasa, kanat, cam çıtası, contalar, çelik takviye ve drenaj detaylarını içeren etkileşimli 3B kesit numunesi.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='6' y='6' width='52' height='52' rx='12' fill='%2315181d'/%3E%3Cpath d='M18 46V18h28v28H18zm6-6h16V24H24v16z' fill='%23f2f2ee'/%3E%3Crect x='28' y='28' width='8' height='8' fill='%235cc8ff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="scene" aria-label="Supremo 85 profil kesiti 3B görünümü"></canvas>
+
+<!-- Yükleme ekranı -->
+<div id="loader" role="status" aria-live="polite">
+  <div class="loader-card">
+    <div class="loader-mark" aria-hidden="true">
+      <svg viewBox="0 0 120 120"><path d="M20 100V20h80v80H20zm14-14h52V34H34v52z"/><rect x="50" y="50" width="20" height="20"/></svg>
+    </div>
+    <div class="loader-overline">SUPREMO 85 · 8500 SERİSİ</div>
+    <h1 class="loader-title">uPVC Pencere Profil Sistemi</h1>
+    <div class="progress" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="loader-status"><span id="loaderText">Hazırlanıyor…</span><span id="loaderPct">0%</span></div>
+  </div>
+</div>
+
+<!-- Başlık -->
+<header class="brand">
+  <div class="brand-overline">SUPREMO 85 · 8500 SERİSİ</div>
+  <div class="brand-title">uPVC Pencere Profil Sistemi</div>
+  <div class="brand-sub">Kasa + kanat + üçlü cam · 300 mm kesit numunesi</div>
+</header>
+
+<!-- Numune seçici -->
+<nav class="page-switch" aria-label="Numune seçimi">
+  <a data-page href="index.html">Köşe kesiti</a>
+  <a class="active" data-page href="kesit.html" aria-current="page">Düz kesit</a>
+</nav>
+
+<!-- Üst sağ araçlar -->
+<div class="top-right">
+  <button class="chip perf-chip" id="perfChip" title="Performans (FPS, çizim çağrısı, üçgen)">
+    <span class="dot" id="perfDot"></span><span id="perfFps">— FPS</span><span class="sep"></span><span id="perfMs">— ms</span><span class="sep"></span><span id="perfCalls">— çağrı</span><span class="sep"></span><span id="perfTris">—</span>
+  </button>
+  <button class="icon-btn" id="btnHelp" title="Kontroller ve kısayollar (?)" aria-label="Yardım">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.6"/><circle cx="12" cy="17" r=".9" class="fill"/></svg>
+  </button>
+  <button class="icon-btn" id="btnFull" title="Tam ekran" aria-label="Tam ekran">
+    <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+  </button>
+</div>
+
+<!-- Parçalar paneli -->
+<aside class="panel parts-panel" id="partsPanel" aria-label="Parçalar">
+  <div class="panel-head">
+    <div>
+      <div class="panel-title">Parçalar</div>
+      <div class="panel-sub" id="partsCount">—</div>
+    </div>
+    <button class="icon-btn small" id="btnPartsCollapse" title="Paneli daralt" aria-label="Paneli daralt">
+      <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+  </div>
+  <div class="parts-list" id="partsList"></div>
+  <div class="panel-foot">
+    <button class="btn ghost" id="btnShowAll">Tümünü göster</button>
+    <button class="btn ghost" id="btnUnsolo" disabled>İzolasyonu kaldır</button>
+  </div>
+</aside>
+<button class="icon-btn parts-toggle" id="btnPartsOpen" title="Parçalar" aria-label="Parçalar panelini aç">
+  <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+</button>
+
+<!-- Parça bilgi paneli -->
+<aside class="panel info-panel" id="infoPanel" aria-live="polite" hidden>
+  <div class="panel-head">
+    <div>
+      <div class="info-group" id="infoGroup">—</div>
+      <div class="info-name" id="infoName">—</div>
+    </div>
+    <button class="icon-btn small" id="btnInfoClose" title="Kapat (Esc)" aria-label="Seçimi kaldır">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div class="info-mat"><span class="swatch" id="infoSwatch"></span><span id="infoMat">—</span></div>
+  <p class="info-text" id="infoText"></p>
+  <dl class="info-dims" id="infoDims"></dl>
+  <div class="info-block"><div class="info-label">Montaj</div><div id="infoAssembly"></div></div>
+  <div class="info-source" id="infoSource"></div>
+  <div class="info-actions">
+    <button class="btn" id="btnFocus" title="F">Odakla</button>
+    <button class="btn" id="btnSolo" title="I">İzole et</button>
+    <button class="btn" id="btnHide" title="H">Gizle</button>
+  </div>
+</aside>
+
+<!-- Alt araç çubuğu -->
+<div class="dock" id="dock">
+  <div class="dock-group explode">
+    <button class="icon-btn" id="btnExplodePlay" title="Patlat / birleştir (E)" aria-label="Patlatma animasyonu">
+      <svg viewBox="0 0 24 24" id="icoExplode"><path d="M12 3v5M12 16v5M3 12h5M16 12h5M6 6l3 3M18 18l-3-3M6 18l3-3M18 6l-3 3"/></svg>
+    </button>
+    <div class="slider-wrap">
+      <div class="slider-label"><span>Patlatma</span><span id="explodeVal">0%</span></div>
+      <input type="range" id="explode" min="0" max="1000" value="0" aria-label="Patlatma oranı">
+    </div>
+  </div>
+  <div class="dock-sep"></div>
+  <div class="dock-group">
+    <button class="tool-btn" id="btnSection" aria-label="Kesit düzlemi" aria-pressed="false" title="Kesit düzlemi (C)">
+      <svg viewBox="0 0 24 24"><path d="M4 7l8-4 8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4" class="dim"/><path d="M3 17h18" class="cut"/></svg>
+      <span>Kesit</span>
+    </button>
+    <button class="tool-btn" id="btnDims" aria-label="Döküman ölçüleri" aria-pressed="false" title="Döküman ölçüleri (D)">
+      <svg viewBox="0 0 24 24"><path d="M4 18L18 4M4 18v-4M4 18h4M18 4v4M18 4h-4"/></svg>
+      <span>Ölçüler</span>
+    </button>
+    <button class="tool-btn" id="btnViews" aria-label="Kamera görünümleri" aria-pressed="false" title="Kamera görünümleri">
+      <svg viewBox="0 0 24 24"><path d="M3 7h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="13" r="3.5"/></svg>
+      <span>Görünüm</span>
+    </button>
+    <button class="tool-btn" id="btnRotate" aria-label="Otomatik döndür" aria-pressed="false" title="Otomatik döndür">
+      <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg>
+      <span>Döndür</span>
+    </button>
+    <button class="tool-btn" id="btnReset" aria-label="Görünümü sıfırla" title="Görünümü sıfırla (R)">
+      <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7"/><path d="M4 4v5h5"/></svg>
+      <span>Sıfırla</span>
+    </button>
+  </div>
+</div>
+
+<!-- Kesit açılır paneli -->
+<div class="popover section-pop" id="sectionPop" hidden>
+  <div class="pop-title">Kesit düzlemi <span class="pop-hint">Kamara yapısını incelemek için düzlemi kaydırın</span></div>
+  <div class="seg" role="radiogroup" aria-label="Kesit ekseni">
+    <button class="seg-btn active" data-axis="x" role="radio" aria-checked="true">Enine (profil kesiti)</button>
+    <button class="seg-btn" data-axis="z" role="radio" aria-checked="false">Boyuna</button>
+    <button class="seg-btn" data-axis="y" role="radio" aria-checked="false">Yatay</button>
+  </div>
+  <div class="slider-wrap wide">
+    <div class="slider-label"><span>Düzlem konumu</span><span id="clipVal">0 mm</span></div>
+    <input type="range" id="clipPos" min="0" max="1000" value="500" aria-label="Kesit konumu">
+  </div>
+  <div class="pop-row">
+    <div class="presets" id="clipPresets"></div>
+    <button class="btn ghost small" id="btnClipFlip" title="Kesilen tarafı ters çevir">Ters çevir</button>
+  </div>
+</div>
+
+<!-- Görünüm açılır paneli -->
+<div class="popover views-pop" id="viewsPop" hidden>
+  <div class="pop-title">Kamera görünümleri</div>
+  <div class="views-grid">
+    <button class="btn" data-view="persp">3/4 perspektif</button>
+    <button class="btn" data-view="end">Uç kesit</button>
+    <button class="btn" data-view="interior">İç cephe</button>
+    <button class="btn" data-view="exterior">Dış cephe</button>
+    <button class="btn" data-view="top">Üstten</button>
+    <button class="btn" data-view="bottom">Alttan</button>
+  </div>
+</div>
+
+<div id="tooltip" role="tooltip" hidden></div>
+<div id="dimLabels" aria-hidden="true"></div>
+
+<!-- Yardım -->
+<div class="modal" id="helpModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="panel-head"><div class="panel-title" id="helpTitle">Kontroller</div>
+      <button class="icon-btn small" data-close title="Kapat" aria-label="Kapat"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="help-grid">
+      <div><kbd>Sol tık</kbd> + sürükle</div><div>Döndür</div>
+      <div><kbd>Sağ tık</kbd> / <kbd>Shift</kbd> + sürükle</div><div>Kaydır</div>
+      <div><kbd>Tekerlek</kbd> / iki parmak</div><div>Yakınlaştır</div>
+      <div><kbd>Tıkla</kbd></div><div>Parça seç</div>
+      <div><kbd>Çift tıkla</kbd></div><div>Parçaya odaklan · boşlukta: sıfırla</div>
+      <div><kbd>H</kbd> / <kbd>I</kbd></div><div>Seçili parçayı gizle / izole et</div>
+      <div><kbd>E</kbd></div><div>Patlat / birleştir</div>
+      <div><kbd>C</kbd> · <kbd>D</kbd></div><div>Kesit · ölçüler</div>
+      <div><kbd>R</kbd> · <kbd>Esc</kbd></div><div>Görünümü sıfırla · seçimi kaldır</div>
+    </div>
+    <p class="help-note">Kesit geometrisi teknik dökümanın 9. sayfasındaki (Su tahliye görünümü) vektör çizimden birebir çıkarılmıştır. Tüm dosyalar yereldir; internet bağlantısı gerekmez.</p>
+  </div>
+</div>
+
+<!-- Performans testi sonucu -->
+<div class="modal" id="perfModal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="perfTitle">
+    <div class="panel-head"><div class="panel-title" id="perfTitle">Performans</div>
+      <button class="icon-btn small" data-close title="Kapat" aria-label="Kapat"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <dl class="info-dims" id="perfStats"></dl>
+    <div class="info-actions"><button class="btn" id="btnBench">Performans testini başlat (6 sn)</button></div>
+    <p class="help-note" id="perfNote">Test; kamerayı döndürür, patlatma ve kesit düzlemini canlandırır ve kare sürelerini ölçer.</p>
+  </div>
+</div>
+
+<noscript><div class="fatal">Bu görüntüleyici JavaScript gerektirir.</div></noscript>
+<script>
+// numune seçici: yumuşak geçiş; kiosk modunda (?kiosk=1) boşta kalınca köşe sayfasındaki tanıtıma döner
+(function () {
+  var kiosk = /[?&]kiosk=1/.test(location.search), m = location.search.match(/[?&]idle=(\d+)/);
+  var q = kiosk ? '?kiosk=1' + (m ? '&idle=' + m[1] : '') : '';
+  document.querySelectorAll('[data-page]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (a.classList.contains('active')) return;
+      document.body.classList.add('leaving');
+      setTimeout(function () { location.href = a.getAttribute('href') + q; }, 260);
+    });
+  });
+  if (kiosk) {
+    var idle = Math.max(15, m ? +m[1] : 90) * 1000, last = Date.now();
+    ['pointerdown', 'pointermove', 'keydown', 'wheel'].forEach(function (ev) { window.addEventListener(ev, function () { last = Date.now(); }, { capture: true, passive: true }); });
+    setInterval(function () { if (Date.now() - last > idle) location.href = 'index.html' + q; }, 2000);
+  }
+})();
+</script>
+<script src="js/app.js" defer></script>
+</body>
+</html>

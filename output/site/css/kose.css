@@ -1,0 +1,200 @@
+/* Supremo 85 — 45° kaynaklı köşe görüntüleyicisi: fuar sürümü ek stiller (style.css'ten sonra yüklenir) */
+
+body.kose {
+  background:
+    radial-gradient(1250px 860px at 56% 44%, #3a4452 0%, #242a33 42%, #15181d 74%, #0b0d10 100%);
+}
+.vignette { position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(120% 100% at 55% 46%, transparent 52%, rgba(0, 0, 0, .38) 86%, rgba(0, 0, 0, .55) 100%); }
+body.kose #scene { z-index: 0; }
+body.kose.ready #scene { animation: sceneIn 1.2s ease both; }
+@keyframes sceneIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- yükleme ---------- */
+.kose-mark svg { width: 70px; height: 70px; }
+.kose-mark .l-frame { fill: #f2f2ee; }
+.kose-mark .l-weld { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; animation: pulse 1.6s ease-in-out infinite; transform-origin: 31px 89px; }
+
+/* ---------- üst çubuk ---------- */
+.topbar { position: fixed; left: 0; right: 0; top: 0; z-index: 7; display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: start; gap: 16px; padding: 18px 20px 0 24px; pointer-events: none; }
+.topbar > * { pointer-events: auto; }
+.kose .brand { position: static; pointer-events: none; }
+.kose .brand-title { font-size: 22px; }
+.kose .top-right { position: static; justify-self: end; }
+.kose .page-switch { position: static; transform: none; justify-self: center; }
+.spec-chip { color: var(--text); font-weight: 600; font-size: 12.5px; }
+.spec-chip svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- panel konumları ---------- */
+.kose .parts-panel { top: 108px; bottom: 112px; }
+.kose .parts-toggle { top: 108px; }
+.kose .info-panel { top: 76px; max-height: calc(100vh - 200px); }
+
+/* ---------- dock ---------- */
+.kose .dock { gap: 6px; padding: 8px 10px 8px 8px; }
+.tour-btn { display: flex; align-items: center; gap: 9px; height: 48px; padding: 0 18px 0 14px; border-radius: 13px; border: 0; cursor: pointer;
+  background: linear-gradient(135deg, #8adcff 0%, #43b2ee 100%); color: #03202d; font-weight: 700; font-size: 13.5px; letter-spacing: .01em;
+  box-shadow: 0 8px 22px rgba(58, 169, 230, .35), inset 0 1px 0 rgba(255, 255, 255, .45); transition: transform .15s, box-shadow .15s, background .2s; white-space: nowrap; }
+.tour-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(58, 169, 230, .45), inset 0 1px 0 rgba(255, 255, 255, .45); }
+.tour-btn svg { width: 15px; height: 15px; fill: currentColor; }
+.tour-btn.active { background: rgba(255, 255, 255, .1); color: var(--text); box-shadow: inset 0 0 0 1px var(--line2); }
+.tour-btn.active svg { display: none; }
+.split { display: flex; align-items: stretch; border-radius: 11px; }
+.split-more { width: 18px; margin-left: -4px; border: 0; background: transparent; color: var(--faint); border-radius: 8px; cursor: pointer; display: grid; place-items: center; }
+.split-more:hover { color: var(--text); background: rgba(255, 255, 255, .06); }
+.split-more svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.turn-btn.spinning svg { animation: turnIcon 2.4s linear infinite; }
+@keyframes turnIcon { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(360deg); } }
+#finishName { max-width: 74px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- popover içerikleri ---------- */
+.seg4 .seg-btn { padding: 7px 4px; }
+.toggle { display: flex; align-items: center; gap: 12px; padding: 10px 2px 2px; cursor: pointer; font-size: 13px; font-weight: 550; }
+.toggle small { display: block; font-size: 11.5px; color: var(--muted); font-weight: 450; margin-top: 1px; }
+.toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.toggle .tg { flex: none; width: 38px; height: 22px; border-radius: 11px; background: rgba(255, 255, 255, .14); position: relative; transition: background .2s; }
+.toggle .tg::after { content: ''; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px rgba(0, 0, 0, .4); }
+.toggle input:checked + .tg { background: var(--accent); }
+.toggle input:checked + .tg::after { transform: translateX(16px); }
+.toggle input:focus-visible + .tg { box-shadow: 0 0 0 3px rgba(92, 200, 255, .45); }
+.views-pop .toggle { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.finish-list { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.finish-btn { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 8px 4px 7px; border-radius: 11px; border: 1px solid transparent; background: transparent;
+  cursor: pointer; font-size: 11.5px; color: var(--muted); transition: background .15s, border-color .15s, color .15s; }
+.finish-btn:hover { background: rgba(255, 255, 255, .06); color: var(--text); }
+.finish-btn.active { border-color: rgba(92, 200, 255, .45); background: var(--accent-soft); color: var(--text); }
+.finish-sw { width: 38px; height: 38px; border-radius: 10px; background: var(--a); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25), 0 3px 8px rgba(0, 0, 0, .35); }
+.finish-sw.wood { background: repeating-linear-gradient(172deg, var(--a) 0 3px, var(--b) 3px 4px, var(--a) 4px 7px, color-mix(in srgb, var(--a), var(--b) 45%) 7px 8px); }
+
+/* ---------- keşif turu kartı ---------- */
+.tour-card { position: fixed; left: 50%; bottom: 102px; transform: translateX(-50%); z-index: 8; width: min(740px, calc(100vw - 32px));
+  padding: 14px 18px 14px 20px; border-radius: 18px; background: rgba(15, 18, 23, .8); border: 1px solid var(--line2); box-shadow: var(--shadow);
+  backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%); animation: tourIn .35s ease; }
+@keyframes tourIn { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.tc-top { display: flex; align-items: center; gap: 14px; }
+.tc-count { font-size: 11.5px; letter-spacing: .14em; color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; min-width: 44px; }
+.tc-dots { display: flex; gap: 6px; flex: 1; }
+.tc-dot { width: 22px; height: 12px; padding: 4px 0; border: 0; background: none; cursor: pointer; position: relative; }
+.tc-dot::before { content: ''; position: absolute; left: 0; right: 0; top: 4px; height: 4px; border-radius: 3px; background: rgba(255, 255, 255, .16); transition: background .2s; }
+.tc-dot.on::before { background: var(--accent); }
+.tc-title { margin: 8px 0 6px; font-size: 23px; font-weight: 680; letter-spacing: -.015em; }
+.tc-text { margin: 0; font-size: 14.5px; line-height: 1.58; color: #d3d9df; }
+.tour-card.swap .tc-title, .tour-card.swap .tc-text { animation: tcIn .55s ease both; }
+.tour-card.swap .tc-text { animation-delay: .06s; }
+@keyframes tcIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.tc-bottom { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
+.tc-progress { flex: 1; height: 3px; border-radius: 3px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.tc-progress span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #3aa9e6, var(--accent)); }
+.tc-ctrl { display: flex; gap: 2px; }
+.tour-card .i-play { display: none; }
+.tour-card.paused .i-play { display: block; }
+.tour-card.paused .i-pause { display: none; }
+.tour-card.paused .tc-progress span { background: var(--faint); }
+body.touring .parts-panel, body.touring .parts-toggle { opacity: 0; pointer-events: none; transform: translateX(-120%); }
+body.touring .info-panel { display: none; }
+
+/* ---------- bilgi işaretleri ---------- */
+#hotspotLayer { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+#hotspotLayer:not(.on) { display: none; }
+.hotspot { position: absolute; left: 0; top: 0; pointer-events: auto; border: 0; background: none; padding: 0; cursor: pointer;
+  display: flex; align-items: center; gap: 8px; margin: -15px 0 0 -15px; transition: opacity .25s; }
+.hs-dot { position: relative; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: rgba(12, 16, 22, .82);
+  border: 1.5px solid var(--accent); color: #fff; font-size: 13px; font-weight: 700; box-shadow: 0 4px 12px rgba(0, 0, 0, .45); }
+.hs-dot::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 1.5px solid rgba(92, 200, 255, .55); animation: ring 2.2s ease-out infinite; }
+@keyframes ring { from { transform: scale(.7); opacity: .9; } to { transform: scale(1.5); opacity: 0; } }
+.hs-label { padding: 5px 10px; border-radius: 8px; background: rgba(12, 15, 20, .86); border: 1px solid var(--line2); font-size: 12.5px; font-weight: 600;
+  white-space: nowrap; opacity: 0; transform: translateX(-4px); transition: opacity .2s, transform .2s; }
+.hotspot:hover .hs-label, .hotspot:focus-visible .hs-label, body.touring .hs-label { opacity: 1; transform: none; }
+.hotspot.occluded { opacity: .3; }
+.hotspot.occluded .hs-label { display: none; }
+.hotspot.occluded .hs-dot::after { display: none; }
+.hot-card { right: 20px; top: 84px; width: 320px; padding-bottom: 14px; animation: slideIn .28s ease; z-index: 9; }
+.hot-card .hc-text { margin: 0 16px; font-size: 13px; line-height: 1.55; color: #cfd5db; }
+
+/* ---------- patlatma etiketleri ---------- */
+#calloutSvg { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; opacity: 0; }
+#calloutSvg polyline { fill: none; stroke: rgba(160, 220, 255, .55); stroke-width: 1; }
+#calloutSvg circle { fill: var(--accent); }
+#calloutLayer { position: fixed; inset: 0; pointer-events: none; z-index: 5; opacity: 0; }
+.callout { position: absolute; left: 0; top: 0; padding: 4px 10px; border-radius: 8px; background: rgba(12, 15, 20, .8); border: 1px solid rgba(160, 220, 255, .28);
+  font-size: 12px; font-weight: 600; white-space: nowrap; }
+
+/* ---------- su yolu etiketleri ---------- */
+#waterTags { position: fixed; inset: 0; pointer-events: none; z-index: 5; opacity: 0; transition: opacity .6s; }
+#waterTags.on { opacity: 1; }
+.water-tag { position: absolute; left: 0; top: 0; margin: -32px 0 0 -15px; min-width: 30px; height: 24px; padding: 0 7px; border-radius: 12px; background: #1f7fe0; color: #fff;
+  font-size: 12px; font-weight: 800; display: grid; place-items: center; box-shadow: 0 0 14px rgba(47, 143, 255, .65), 0 3px 8px rgba(0, 0, 0, .4); }
+
+/* ---------- teknik özellikler ---------- */
+.modal-card.wide { width: min(660px, calc(100vw - 32px)); }
+.spec-title { font-size: 19px; margin-top: 4px; }
+.spec-list { margin: 4px 18px 0; grid-template-columns: minmax(150px, auto) 1fr; }
+.spec-list dd { text-align: left; font-weight: 500; line-height: 1.45; }
+.spec-list .src { display: inline-block; margin-left: 8px; padding: 1px 6px; border-radius: 5px; background: rgba(92, 200, 255, .12); color: var(--accent); font-size: 11px; font-weight: 650; white-space: nowrap; }
+.assumptions { margin: 4px 0 0; padding-left: 18px; font-size: 12.5px; line-height: 1.55; color: var(--muted); }
+#specsModal .info-block { margin: 14px 18px 0; }
+
+/* ---------- kiosk tanıtımı ---------- */
+.attract { position: fixed; left: 50%; bottom: 34px; transform: translateX(-50%); z-index: 12; cursor: pointer; }
+.attract-pill { display: flex; align-items: center; gap: 16px; padding: 16px 30px 16px 22px; border-radius: 40px; background: rgba(12, 15, 20, .72); border: 1px solid rgba(160, 220, 255, .35);
+  font-size: 20px; font-weight: 650; letter-spacing: .01em; box-shadow: 0 12px 36px rgba(0, 0, 0, .45); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  animation: breathe 3s ease-in-out infinite; }
+.touch-ring { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); position: relative; box-shadow: 0 0 16px rgba(92, 200, 255, .8); }
+.touch-ring::after { content: ''; position: absolute; inset: -8px; border-radius: 50%; border: 2px solid rgba(92, 200, 255, .6); animation: ring 1.8s ease-out infinite; }
+@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+body.attract-on .dock, body.attract-on .top-right, body.attract-on .page-switch, body.attract-on .parts-toggle, body.attract-on .info-panel, body.attract-on .popover { opacity: 0; pointer-events: none; transition: opacity .6s; }
+body.attract .tour-card { bottom: 120px; width: min(860px, calc(100vw - 48px)); padding: 18px 26px; }
+body.attract .tc-title { font-size: 28px; }
+body.attract .tc-text { font-size: 17px; }
+body.attract .tc-ctrl, body.attract #tcClose { display: none; }
+
+/* ---------- kiosk: büyük dokunmatik hedefler ---------- */
+body.kiosk .perf-chip { display: none; }
+body.kiosk .tool-btn { min-width: 74px; min-height: 60px; padding: 9px 10px 8px; font-size: 12.5px; }
+body.kiosk .tool-btn svg { width: 22px; height: 22px; }
+body.kiosk .icon-btn { width: 50px; height: 50px; border-radius: 14px; }
+body.kiosk .icon-btn.small { width: 40px; height: 40px; }
+body.kiosk .tour-btn { height: 60px; font-size: 15px; padding: 0 22px 0 18px; }
+body.kiosk .chip { height: 50px; font-size: 14px; padding: 0 18px; }
+body.kiosk .page-switch a { padding: 13px 24px; font-size: 15px; }
+body.kiosk .slider-wrap { width: 240px; }
+body.kiosk input[type=range] { height: 34px; }
+body.kiosk input[type=range]::-webkit-slider-thumb { width: 26px; height: 26px; margin-top: -11px; }
+body.kiosk input[type=range]::-moz-range-thumb { width: 26px; height: 26px; }
+body.kiosk .tour-card { bottom: 120px; }
+body.kiosk .tc-title { font-size: 26px; }
+body.kiosk .tc-text { font-size: 16.5px; }
+body.kiosk .btn { padding: 12px 16px; font-size: 14px; }
+body.kiosk .seg-btn { padding: 12px 8px; font-size: 14px; }
+body.kiosk .part-row { padding: 12px 8px; font-size: 15px; }
+body.kiosk .hs-dot { width: 40px; height: 40px; font-size: 15px; }
+body.kiosk .help-grid .kb { display: none; }
+body.kiosk, body.kiosk * { -webkit-touch-callout: none; }
+body.no-cursor, body.no-cursor * { cursor: none !important; }
+@media (orientation: portrait) {
+  body.kiosk .tour-card { bottom: 140px; }
+  .kose .brand-title { font-size: 20px; }
+}
+
+/* ---------- dar ekran ---------- */
+@media (max-width: 1180px) {
+  .kose .brand-sub { display: none; }
+  .spec-chip span { display: none; }
+}
+@media (max-width: 820px) {
+  .topbar { grid-template-columns: 1fr auto; padding: 12px 12px 0 16px; gap: 8px; }
+  .kose .page-switch { grid-column: 1 / -1; grid-row: 2; justify-self: start; }
+  .kose .brand { max-width: none; }
+  .kose .brand-title { font-size: 15px; }
+  .kose .parts-panel { top: 120px; }
+  .kose .parts-toggle { top: 120px; }
+  .tour-btn span { display: none; }
+  .tour-btn { height: 42px; padding: 0 12px; }
+  .tour-card { bottom: 84px; padding: 12px 14px; }
+  .tc-title { font-size: 18px; }
+  .tc-text { font-size: 13px; }
+  .finish-list { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .finish-sw { width: 30px; height: 30px; }
+  .hot-card { left: 12px; right: 12px; width: auto; top: auto; bottom: 150px; }
+}

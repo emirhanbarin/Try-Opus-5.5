@@ -1,0 +1,7 @@
+// three.js r186 + eklentiler: köşe görüntüleyicisinin kullandığı alt küme (esbuild ile vendor/three-bundle.min.js'e paketlenir)
+export { ACESFilmicToneMapping, NeutralToneMapping, AdditiveBlending, NormalBlending, Box3, BufferAttribute, BufferGeometry, CatmullRomCurve3, Color, DirectionalLight, DoubleSide, FrontSide, BackSide, DynamicDrawUsage, EdgesGeometry, EquirectangularReflectionMapping, Euler, Float32BufferAttribute, Group, IcosahedronGeometry, InstancedMesh, InstancedBufferAttribute, LineBasicMaterial, LineSegments, LinearFilter, LinearMipmapLinearFilter, LinearSRGBColorSpace, LoadingManager, MathUtils, Matrix3, Matrix4, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshPhysicalMaterial, MeshStandardMaterial, NoColorSpace, Object3D, OrthographicCamera, PMREMGenerator, PerspectiveCamera, Plane, PlaneGeometry, Quaternion, Raycaster, RepeatWrapping, SRGBColorSpace, Scene, ShaderChunk, ShaderMaterial, Sphere, TubeGeometry, Vector2, Vector3, Vector4, WebGLRenderTarget, WebGLRenderer } from 'three';
+export { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+export { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+export { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
+export { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+export { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
