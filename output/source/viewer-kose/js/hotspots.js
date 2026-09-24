@@ -63,6 +63,11 @@ export class Hotspots {
     this.app.requestRender();
   }
   setCallouts(on) { this.callouts = on; this.app.requestRender(); }
+  // etiket geçişi sürerken çizim döngüsü boşa geçmesin (yarı saydam etiket ekranda kalmasın)
+  animating() {
+    const wantC = this.callouts && this.app.state.explode > 0.55;
+    return wantC ? this.calloutA < 0.99 : this.calloutA >= 0.01;
+  }
   open(h) {
     const app = this.app;
     this.card.querySelector('.hc-title').textContent = h.title;
@@ -103,7 +108,8 @@ export class Hotspots {
     }
     // patlatma etiketleri
     const wantC = this.callouts && app.state.explode > 0.55;
-    this.calloutA += ((wantC ? 1 : 0) - this.calloutA) * 0.2;
+    const dt = Math.min(0.1, (now - (this.lastT ?? now)) / 1000); this.lastT = now;   // kare hızından bağımsız geçiş
+    this.calloutA += ((wantC ? 1 : 0) - this.calloutA) * (1 - Math.exp(-dt * 12));
     if (this.calloutA < 0.01 && !wantC) { this.clayer.style.opacity = 0; this.svg.style.opacity = 0; return; }
     this.clayer.style.opacity = this.calloutA; this.svg.style.opacity = this.calloutA;
     const pts = [];

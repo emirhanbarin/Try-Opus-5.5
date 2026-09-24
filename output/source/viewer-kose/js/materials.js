@@ -55,6 +55,7 @@ function patch(material, key, opts = {}) {
     uCapHatch: { value: srgb(cap.h) },
     uHatch: { value: new THREE.Vector2(cap.s, cap.a) },
     uSeamK: { value: opts.seam || 0 },
+    uODeq: { value: new THREE.Vector4(0, 0, 0, 1) },       // GLB nicemleme: nesne uzayı -> metre (xyz öteleme, w ölçek)
   };
   const defs = {};
   if (opts.foil) defs.SUP_FOIL = '';
@@ -70,6 +71,7 @@ function patch(material, key, opts = {}) {
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>
 varying vec3 vWPos; varying vec3 vWNrm; varying vec3 vOPos; varying vec3 vONrm;
+uniform vec4 uODeq;
 #ifdef SUP_FOIL
 #ifndef USE_UV1
 attribute vec2 uv1;
@@ -79,7 +81,7 @@ varying float vFoil;
       .replace('#include <fog_vertex>', `#include <fog_vertex>
 vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
 vWNrm = normalize(mat3(modelMatrix) * objectNormal);
-vOPos = transformed; vONrm = objectNormal;
+vOPos = transformed * uODeq.w + uODeq.xyz; vONrm = objectNormal;   // numunenin durağan konumu (m)
 #ifdef SUP_FOIL
 vFoil = uv1.x;
 #endif`);
@@ -130,8 +132,11 @@ float capHatch(vec3 wp){
 #ifdef SUP_DIE
       supT = cross(supAx, supN0); float supTl = length(supT); supT = supTl > 1e-4 ? supT / supTl : vec3(0.0);
       float supC = dot(vOPos, supT) * 1000.0;                  // mm
-      supDie = supVN(supC * 2.3) * 0.65 + supVN(supC * 9.1 + 17.0) * 0.35;
-      supAmp = (1.0 - smoothstep(0.00008, 0.00028, supPx)) * uMicro * supSide;
+      // her bileşen, hücresi ekranda ~2 pikselden küçülmeden söner (döndürürken kıpırtı olmaz)
+      float supA1 = 1.0 - smoothstep(0.4, 0.8, supPx * 2300.0);
+      float supA2 = 1.0 - smoothstep(0.4, 0.8, supPx * 9100.0);
+      supDie = 0.5 + (supVN(supC * 2.3) - 0.5) * 0.65 * supA1 + (supVN(supC * 9.1 + 17.0) - 0.5) * 0.35 * supA2;
+      supAmp = supA1 * uMicro * supSide;
 #endif
       float supFoil = 0.0; float supGrain = 0.5;
 #ifdef SUP_FOIL
@@ -153,8 +158,8 @@ float capHatch(vec3 wp){
       {
         float d = abs(vOPos.x - vOPos.y) * 0.70710678;         // gönye düzlemine uzaklık (m)
         float px = fwidth(d);
-        float w = max(0.00012, px * 1.25);                     // en az ~1 piksel: çizgi kesintisiz kalır
-        supSeam = (1.0 - smoothstep(0.0, w, d)) * uSeam * clamp(0.00035 / max(px, 1e-7), 0.35, 1.0);
+        float w = max(0.000018, px * 1.25);                    // en az ~1 piksel: çizgi kesintisiz kalır
+        supSeam = (1.0 - smoothstep(0.0, w, d)) * uSeam * clamp(5.25e-5 / max(px, 1e-9), 0.35, 1.0);   // uzakta %35'e söner
         diffuseColor.rgb *= 1.0 - supSeam * (uSeamK > 1.5 ? 0.6 : 0.3);
       }
 #endif
@@ -172,7 +177,7 @@ float capHatch(vec3 wp){
       roughnessFactor *= 1.0 + (supDie - 0.5) * 0.18 * supAmp;
 #endif
 #ifdef SUP_GRAIN
-      roughnessFactor *= 0.9 + 0.2 * supVN3(vOPos * 2600.0) * (1.0 - smoothstep(0.0001, 0.0004, supPx)) * uMicro;
+      roughnessFactor *= 0.9 + 0.2 * supVN3(vOPos * 2600.0) * (1.0 - smoothstep(0.4, 0.8, supPx * 2600.0)) * uMicro;   // 0,38 mm gren
 #endif
 #ifdef SUP_TRI
       roughnessFactor = clamp(roughnessFactor * (1.35 - 0.7 * spg), 0.12, 1.0);
@@ -186,9 +191,10 @@ float capHatch(vec3 wp){
       }
 #endif
 #ifdef SUP_FOIL
-      float supBumpK = uFinish.w * (1.0 - smoothstep(0.00006, 0.00026, supPx));
+      // folyo kabartması: yükseklik = desen × w × 0,1 mm (w 0,5 -> 50 µm); doku 4096 texel/m, texel ~2 pikselden küçülünce söner
+      float supBumpK = uFinish.w * (1.0 - smoothstep(0.4, 0.8, supPx * 4096.0));
       if (supFoil > 0.5 && supBumpK > 0.001) {
-        vec2 dHdxy = vec2(dFdx(supGrain), dFdy(supGrain)) * supBumpK * 0.6;
+        vec2 dHdxy = vec2(dFdx(supGrain), dFdy(supGrain)) * supBumpK * 0.0001;
         vec3 vSigmaX = dFdx(-vViewPosition); vec3 vSigmaY = dFdy(-vViewPosition);
         vec3 vNb = normal;
         vec3 R1 = cross(vSigmaY, vNb); vec3 R2 = cross(vNb, vSigmaX);

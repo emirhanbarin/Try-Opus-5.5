@@ -159,7 +159,10 @@ await page.waitForTimeout(2500);
 const nCall = await page.locator('.callout').evaluateAll((els) => els.filter((e) => e.style.display !== 'none').length);
 check('tur: montaj sırası (patlatma etiketleri)', nCall >= 8, nCall + ' etiket');
 await shot(page, '09_montaj', 1500);
-await page.click('#tcClose'); await page.waitForTimeout(3000);
+await page.click('#tcClose');
+// geri dönüş patlatması 2,4 sn sürer; yazılımsal GL'de kare ~1 sn olduğundan sabit bekleme yerine bitişini bekle
+await page.waitForFunction(() => !window.__viewer.state.explodeAnim, null, { timeout: 30000 }).catch(() => {});
+await page.waitForTimeout(500);
 const rest = await ev(() => ({ active: window.__viewer.modules.tour.active, clip: window.__viewer.state.clip.on, ghost: window.__viewer.state.ghostSet, water: window.__viewer.modules.water.active, tgt: window.__viewer.state.explodeTarget }));
 check('turdan çık: durum geri yüklendi', !rest.active && !rest.clip && !rest.ghost && !rest.water && rest.tgt === 0, JSON.stringify(rest));
 const maxInfo = await ev(() => ({ ...window.__viewer.lastInfo }));

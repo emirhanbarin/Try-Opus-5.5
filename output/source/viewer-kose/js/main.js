@@ -222,6 +222,12 @@ function buildModel(root, tex) {
     if (!mesh) { console.warn('Eksik parça:', def.id); continue; }
     const mat = createMaterial(def.mat, tex, def, tier);
     mat.clippingPlanes = null;
+    // KHR_mesh_quantization: köşe noktaları düğüm ölçeğiyle metreye açılır; shader'daki mm/m ölçüleri buna dayanır
+    if (mat.userData.u.uODeq) {
+      const sc = mesh.scale;
+      if (Math.abs(sc.x - sc.y) > 1e-6 || Math.abs(sc.x - sc.z) > 1e-6) console.warn('Eşit olmayan ölçek:', def.id);
+      mat.userData.u.uODeq.value.set(mesh.position.x, mesh.position.y, mesh.position.z, sc.x);
+    }
     mesh.material = mat;
     mesh.userData.partId = def.id;
     mesh.geometry.computeBoundsTree();
@@ -1058,6 +1064,7 @@ const renderLoop = {
     if (stepCamera(now)) active = true;
     if (stepBenchmark(now)) active = true;
     for (const fn of frameHooks) if (fn(now, dt)) active = true;
+    if (modules.hotspots?.animating()) active = true;
 
     // patlatma
     if (state.explodeAnim) {
