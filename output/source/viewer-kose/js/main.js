@@ -2,13 +2,16 @@
 // three.js r186 (yerel paket), meshopt geometri, KTX2 dokular, önceden pişirilmiş AO, stüdyo HDRI v2
 import * as THREE from '../vendor/three-bundle.min.js';
 import { PARTS, GROUPS, MATERIALS, SECTION_PRESETS, FINISHES, SPECS, ASSUMPTIONS, PERFORMANCE } from './parts-data.js';
-import { createMaterial, createGhostMaterial, shared, applyFinish } from './materials.js';
+import { createMaterial, createGhostMaterial, shared, applyFinish, setLensDefine } from './materials.js';
 import { ContactShadow } from './contact-shadow.js';
 import { Tour } from './tour.js';
 import { Hotspots } from './hotspots.js';
 import { Water } from './water.js';
 import { Kiosk } from './kiosk.js';
 import { DrawingOverlay } from './drawing.js';
+import { Lens } from './lens.js';
+import { Chambers } from './chambers.js';
+import { Story } from './story.js';
 
 const { OrbitControls, GLTFLoader, KTX2Loader, MeshoptDecoder, computeBoundsTree, disposeBoundsTree, acceleratedRaycast } = THREE;
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -30,6 +33,7 @@ const state = {
   clip: { on: false, axis: 'x', pos: 150, flip: false },
   dims: false, drawing: false, hotspots: false,
   finish: 'beyaz',
+  compare: { on: false, right: 'altinmese', x: 0.5, side: 'right' },   // renk perdesi (sağ taraf karşılaştırma rengi)
   needsRender: 2, shadowDirty: true,
   camAnim: null, intro: true,
 };
@@ -180,6 +184,9 @@ async function boot() {
   modules.drawing = new DrawingOverlay(app);
   modules.hotspots = new Hotspots(app);
   modules.water = new Water(app);
+  modules.lens = new Lens(app);
+  modules.chambers = new Chambers(app);
+  modules.story = new Story(app);
   modules.tour = new Tour(app);
   modules.kiosk = new Kiosk(app, KIOSK);
   updateViewOffsetTarget(); viewOffset.x = viewOffset.tx; viewOffset.y = viewOffset.ty;
@@ -193,7 +200,9 @@ async function boot() {
   const probe = new THREE.Mesh(parts.get('kasa_profili').mesh.geometry, ghostMat); probe.position.copy(MODEL_OFFSET);
   scene.add(probe);
   modules.water.setVisible(true);
-  for (const on of [true, false]) {
+  const pvcMats = [...parts.values()].map((p) => p.mat);
+  for (const lens of [true, false]) for (const on of [true, false]) {
+    setLensDefine(pvcMats, lens);
     attachClipping(on);
     try { await renderer.compileAsync(scene, camera); } catch (e) { renderer.compile(scene, camera); }
   }
@@ -361,8 +370,9 @@ function select(id, { focus = false, refresh = false } = {}) {
   const p = parts.get(id); const def = p.def;
   $('infoGroup').textContent = GROUPS.find((g) => g.id === def.group).label;
   $('infoName').textContent = def.name;
-  $('infoSwatch').style.background = def.foil && state.finish !== 'beyaz' ? FINISHES.find((f) => f.id === state.finish).a : MATERIALS[def.mat].swatch;
-  $('infoMat').textContent = MATERIALS[def.mat].label + (def.foil && state.finish !== 'beyaz' ? ' · folyo: ' + FINISHES.find((f) => f.id === state.finish).label : '');
+  const fo = finishSides(finishById(state.finish))[0], foiled = def.foil && fo.mode > 0;
+  $('infoSwatch').style.background = foiled ? fo.a : MATERIALS[def.mat].swatch;
+  $('infoMat').textContent = MATERIALS[def.mat].label + (foiled ? ' · folyo: ' + finishById(state.finish).label : '');
   $('infoText').textContent = def.info;
   const dl = $('infoDims'); dl.innerHTML = '';
   for (const [k, v] of def.dims) {
@@ -419,7 +429,9 @@ function pick(x, y) {
   ndc.set(((x - rect.left) / rect.width) * 2 - 1, -((y - rect.top) / rect.height) * 2 + 1);
   raycaster.setFromCamera(ndc, camera);
   const meshes = []; parts.forEach((p) => { if (p.mesh.visible && !p.ghost) meshes.push(p.mesh); });
-  const hits = raycaster.intersectObjects(meshes, false).filter((h) => !state.clip.on || clipPlane.distanceToPoint(h.point) >= -1e-5);
+  if (modules.story?.active) return null;
+  let hits = raycaster.intersectObjects(meshes, false).filter((h) => !state.clip.on || clipPlane.distanceToPoint(h.point) >= -1e-5);
+  if (modules.lens?.contains(x, y)) hits = hits.filter((h) => !parts.get(h.object.userData.partId).mat.userData.lensable);
   if (!hits.length) return null;
   const first = hits[0];
   if (parts.get(first.object.userData.partId).def.mat === 'glass') {
@@ -479,22 +491,26 @@ const AXES = { x: new THREE.Vector3(-1, 0, 0), y: new THREE.Vector3(0, -1, 0), z
   d: new THREE.Vector3(1, -1, 0).normalize() };
 let planeHelper, planeHelperFade = 0;
 let clipAttached = false;
+const extraClipMats = [];                              // modüllerin kesit düzlemine uyan ek malzemeleri
 function attachClipping(on) {
   if (clipAttached === on) return;
   clipAttached = on;
   parts.forEach((p) => { p.mat.clippingPlanes = on ? clipPlanes : null; });
+  for (const m of extraClipMats) m.clippingPlanes = on ? clipPlanes : null;
 }
+function addClipMaterial(m) { extraClipMats.push(m); m.clippingPlanes = clipAttached ? clipPlanes : null; }
 function clipPoint(axis, pos) {   // düzlem üzerindeki bir nokta (dünya, m)
   if (axis === 'd') return toWorld(150 + pos / Math.SQRT2, 150 - pos / Math.SQRT2, 0);   // (x - y)/√2 = pos
   const v = { x: 0, y: 0, z: 0 }; v[axis] = pos;
   return toWorld(v.x, v.y, v.z);
 }
-function setClip(axis, pos, on = true) {
-  state.clip.axis = axis; state.clip.pos = pos; state.clip.flip = false; state.clip.on = on;
+// opts.flip: düzlemin öbür tarafı kalır; opts.quiet: düzlem yardımcısı gösterilmez (hikâye / animasyon)
+function setClip(axis, pos, on = true, opts = {}) {
+  state.clip.axis = axis; state.clip.pos = pos; state.clip.flip = !!opts.flip; state.clip.on = on;
   document.querySelectorAll('.seg-btn[data-axis]').forEach((x) => { const a = x.dataset.axis === axis; x.classList.toggle('active', a); x.setAttribute('aria-checked', String(a)); });
-  updateClip();
+  updateClip(opts);
 }
-function updateClip() {
+function updateClip(opts = {}) {
   const c = state.clip;
   attachClipping(c.on);
   $('btnSection').setAttribute('aria-pressed', String(c.on));
@@ -520,7 +536,7 @@ function updateClip() {
     planeHelper.add(fill, edge); planeHelper.renderOrder = 5;
     scene.add(planeHelper);
   }
-  if (c.on) {
+  if (c.on && !opts.quiet) {
     const pad = 16;
     const p = clipPoint(c.axis, c.pos);
     planeHelper.rotation.set(0, 0, 0);
@@ -744,15 +760,55 @@ function userActive() {
 }
 
 // ------------------------------------------------------------------ renk / folyo
+const finishById = (id) => FINISHES.find((x) => x.id === id) || FINISHES[0];
+// iki renkli seçenek: dış ve iç yüz ayrı FINISHES girdileri
+const finishSides = (f) => (f.outer ? [finishById(f.outer), finishById(f.inner)] : [f, f]);
 function setFinish(id) {
-  const f = FINISHES.find((x) => x.id === id) || FINISHES[0];
+  const f = finishById(id);
   state.finish = f.id;
-  applyFinish(f);
-  document.querySelectorAll('.finish-btn').forEach((b) => b.classList.toggle('active', b.dataset.finish === f.id));
-  $('finishName').textContent = f.label;
+  const [o, i] = finishSides(f);
+  applyFinish(o, i, 0);
+  if (!state.compare.on) applyFinish(o, i, 1);
+  $('finishName').textContent = f.short || f.label;
+  refreshFinishButtons();
   if (state.selected) select(state.selected, { focus: false, refresh: true });
   state.needsRender = 2;
 }
+function setCompareFinish(id) {
+  const f = finishById(id);
+  state.compare.right = f.id;
+  const [o, i] = finishSides(f);
+  applyFinish(o, i, 1);
+  refreshFinishButtons();
+  state.needsRender = 2;
+}
+function refreshFinishButtons() {
+  const c = state.compare;
+  document.querySelectorAll('.finish-btn').forEach((b) => {
+    b.classList.toggle('active', b.dataset.finish === state.finish);
+    b.classList.toggle('right', c.on && b.dataset.finish === c.right);
+  });
+  $('splitL').textContent = finishById(state.finish).label;
+  $('splitR').textContent = finishById(c.right).label;
+}
+// renk perdesi: ekranı dikey çizgiyle ikiye böler; sol = seçili renk, sağ = karşılaştırma rengi (tek geçişte çizilir)
+function setCompare(on) {
+  const c = state.compare;
+  c.on = on; c.side = 'right';
+  $('tglCompare').checked = on; $('splitBar').hidden = !on; $('compareSide').hidden = !on;
+  document.querySelectorAll('[data-side]').forEach((b) => b.classList.toggle('active', b.dataset.side === c.side));
+  if (on) setCompareFinish(c.right === state.finish ? (state.finish === 'altinmese' ? 'dis_antrasit' : 'altinmese') : c.right);
+  else { const [o, i] = finishSides(finishById(state.finish)); applyFinish(o, i, 1); }
+  syncSplit(); refreshFinishButtons();
+}
+function syncSplit() {
+  const x = state.compare.x * window.innerWidth;
+  shared.uSplit.value.set(x * renderer.getPixelRatio(), state.compare.on ? 1 : 0);
+  $('splitBar').style.transform = `translateX(${x}px)`;
+  state.needsRender = 2;
+}
+// piksel oranı değişince ekran uzayındaki araçlar (perde, mercek) yeniden eşlenir
+function onPixelRatioChange() { syncSplit(); modules.lens?.sync(); }
 
 // ------------------------------------------------------------------ UI
 const ICON = {
@@ -868,13 +924,35 @@ function buildUI() {
   for (const f of FINISHES) {
     const b = document.createElement('button'); b.className = 'finish-btn'; b.dataset.finish = f.id; b.title = f.label;
     b.setAttribute('aria-label', f.label);
-    const sw = document.createElement('span'); sw.className = 'finish-sw' + (f.mode === 2 ? ' wood' : '');
-    sw.style.setProperty('--a', f.a); sw.style.setProperty('--b', f.b);
+    const [o, i] = finishSides(f);
+    const sw = document.createElement('span'); sw.className = 'finish-sw' + (o.mode === 2 ? ' wood' : '') + (f.outer ? ' bi' : '');
+    sw.style.setProperty('--a', o.a); sw.style.setProperty('--b', o.b); sw.style.setProperty('--i', i.a);
     const lb = document.createElement('span'); lb.textContent = f.label;
     b.append(sw, lb);
-    b.onclick = () => { setFinish(f.id); userActive(); };
+    b.onclick = () => { if (state.compare.on && state.compare.side === 'right') setCompareFinish(f.id); else setFinish(f.id); userActive(); };
     fl.append(b);
   }
+  $('tglCompare').onchange = (e) => { setCompare(e.target.checked); userActive(); };
+  document.querySelectorAll('[data-side]').forEach((b) => (b.onclick = () => {
+    state.compare.side = b.dataset.side;
+    document.querySelectorAll('[data-side]').forEach((x) => x.classList.toggle('active', x === b));
+  }));
+  // perde tutamağı: sürükleyerek ayırma çizgisini kaydır
+  const grip = $('splitGrip');
+  grip.addEventListener('pointerdown', (e) => { e.preventDefault(); grip.setPointerCapture(e.pointerId); grip.dataset.drag = '1'; userActive(); });
+  grip.addEventListener('pointermove', (e) => {
+    if (grip.dataset.drag !== '1') return;
+    state.compare.x = Math.min(0.95, Math.max(0.05, e.clientX / window.innerWidth)); syncSplit(); userActive();
+  });
+  const gEnd = () => { grip.dataset.drag = ''; };
+  grip.addEventListener('pointerup', gEnd); grip.addEventListener('pointercancel', gEnd);
+
+  // araçlar: üretim hikâyesi, röntgen merceği, kamara sayacı
+  $('btnTools').onclick = () => { const pop = $('toolsPop'); const o = pop.hidden; closePopovers(); pop.hidden = !o; $('btnTools').setAttribute('aria-pressed', String(o)); };
+  $('tStory').onclick = () => { closePopovers(); modules.tour.start({ only: 'uretim' }); userActive(); };
+  $('tLens').onclick = () => { const on = !modules.lens.on; modules.lens.setOn(on); $('tLens').setAttribute('aria-pressed', String(on)); if (on) closePopovers(); userActive(); };
+  $('tChambers').onclick = () => { closePopovers(); runChambers(); userActive(); };
+  $('chamberClose').onclick = () => modules.chambers.stop();
   $('btnFinish').onclick = () => { const pop = $('finishPop'); const o = pop.hidden; closePopovers(); pop.hidden = !o; $('btnFinish').setAttribute('aria-pressed', String(o)); };
 
   $('btnReset').onclick = resetAll;
@@ -954,16 +1032,28 @@ function setHotspots(on) {
   state.needsRender = 2;
 }
 function closePopovers() {
-  for (const id of ['sectionPop', 'viewsPop', 'dimsPop', 'turnPop', 'finishPop']) $(id).hidden = true;
+  for (const id of ['sectionPop', 'viewsPop', 'dimsPop', 'turnPop', 'finishPop', 'toolsPop']) $(id).hidden = true;
   document.body.classList.remove('sec-open');
   $('btnViews').setAttribute('aria-pressed', 'false');
   $('btnFinish').setAttribute('aria-pressed', 'false');
+  $('btnTools').setAttribute('aria-pressed', 'false');
+}
+// kamara sayacı: uç kesit görünümü, 360° bekler
+function runChambers() {
+  modules.tour?.stop(false);
+  if (state.clip.on) { state.clip.on = false; updateClip(); }
+  setExplodeTarget(0, true); setView('dims'); setTurntable(false);
+  modules.chambers.run();
 }
 function closeModals() { for (const id of ['helpModal', 'specsModal', 'perfModal']) $(id).hidden = true; }
 const anyModalOpen = () => ['helpModal', 'specsModal', 'perfModal'].some((id) => !$(id).hidden);
 function resetAll() {
   modules.tour?.stop(false);
+  modules.story?.stop();
   modules.water?.stop();
+  modules.chambers?.stop();
+  if (modules.lens?.on) { modules.lens.setOn(false); $('tLens').setAttribute('aria-pressed', 'false'); }
+  if (state.compare.on) setCompare(false);
   closeModals(); modules.hotspots?.close();
   parts.forEach((p) => (p.visible = true)); state.soloSet = null; setGhost(null);
   select(null);
@@ -997,6 +1087,9 @@ function onKey(e) {
   else if (c === 'ArrowRight' && modules.tour.active) modules.tour.next();
   else if (c === 'ArrowLeft' && modules.tour.active) modules.tour.prev();
   else if (c === 'KeyO') $('btnTurn').click();
+  else if (c === 'KeyX') $('tLens').click();
+  else if (c === 'KeyK') runChambers();
+  else if (c === 'KeyU') modules.tour.start({ only: 'uretim' });
   else if (c === 'KeyR') resetAll();
   else if (e.key === '?') $('helpModal').hidden = false;
 }
@@ -1037,14 +1130,14 @@ function updatePerfUI(now, active) {
   $('perfTris').textContent = `${formatTris(lastInfo.tris)} üçgen`;
   // uyarlanabilir çözünürlük ve kalite: süreklilikte < 45 FPS ise önce piksel oranı, sonra mikro ayrıntı düşer
   if (perf.adaptive && s && recent.length >= 60 && s.fps < 45 && now > perf.adaptFrom) {
-    if (dpr > 1) { dpr = Math.max(1, dpr - 0.25); renderer.setPixelRatio(dpr); perf.frames.length = 0; }
+    if (dpr > 1) { dpr = Math.max(1, dpr - 0.25); renderer.setPixelRatio(dpr); perf.frames.length = 0; onPixelRatioChange(); }
     else if (tier === 'high') { tier = 'low'; shared.uMicro.value = 0; perf.frames.length = 0; }
   }
 }
 // kiosk tanıtımına her girişte kalite yeniden denenir: tek bir geçici yavaşlık fuar boyunca düşük kalite bırakmasın
 function restoreQuality() {
   if (dpr === DPR_MAX && tier === TIER0) return;
-  dpr = DPR_MAX; renderer.setPixelRatio(dpr);
+  dpr = DPR_MAX; renderer.setPixelRatio(dpr); onPixelRatioChange();
   tier = TIER0; shared.uMicro.value = tier === 'high' ? 1 : 0;
   perf.frames.length = 0; perf.adaptFrom = performance.now() + 10000;
   state.needsRender = 2;
@@ -1115,7 +1208,7 @@ const app = {
   THREE, scene, camera, controls, renderer, model, parts, state, turn, MM, MODEL_OFFSET, KIOSK,
   $, toWorld, setView, viewPose, animateCamera, setExplodeTarget, setClip, updateClip, select, setGhost, refreshVisibility,
   setTurntable, setFinish, setDims, setDrawing, setHotspots, resetAll, focusPart, closePopovers, fitDistance, userActive,
-  restoreQuality, markLayout: () => markLayout(),
+  restoreQuality, markLayout: () => markLayout(), applyExplode, addClipMaterial, ghostMat, setCompare, runChambers,
   modules, onFrame: (fn) => frameHooks.push(fn), requestRender: (n = 2) => { state.needsRender = Math.max(state.needsRender, n); },
   get tier() { return tier; },
 };
@@ -1229,6 +1322,7 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   dpr = DPR_MAX; renderer.setPixelRatio(dpr);
   renderer.setSize(window.innerWidth, window.innerHeight, false);
+  onPixelRatioChange();
   state.needsRender = 2;
 });
 document.addEventListener('visibilitychange', () => { perf.frames.length = 0; });

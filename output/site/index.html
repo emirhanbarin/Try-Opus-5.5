@@ -158,6 +158,10 @@
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17M5.2 7.5l13.6 9M5.2 16.5l13.6-9" class="dim"/></svg>
       <span id="finishName">Beyaz</span>
     </button>
+    <button class="tool-btn" id="btnTools" aria-label="Araçlar" aria-pressed="false" title="Üretim hikâyesi, röntgen merceği, kamara sayacı">
+      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6" class="dim"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6" class="dim"/><circle cx="16.75" cy="16.75" r="3.4"/></svg>
+      <span>Araçlar</span>
+    </button>
     <button class="tool-btn" id="btnReset" aria-label="Görünümü sıfırla" title="Görünümü sıfırla (R)">
       <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.3-5.7"/><path d="M4 4v5h5"/></svg>
       <span>Sıfırla</span>
@@ -218,8 +222,37 @@
 <!-- Renk -->
 <div class="popover finish-pop" id="finishPop" hidden>
   <div class="pop-title">Renk / folyo <span class="pop-hint">Görsel amaçlıdır; renk kartelası üreticiden teyit edilmelidir</span></div>
+  <label class="toggle"><input type="checkbox" id="tglCompare"><span class="tg"></span><span>Karşılaştır <small>Ekranı ikiye bölen perdeyi sürükleyin</small></span></label>
+  <div class="seg compare-side" id="compareSide" role="radiogroup" aria-label="Seçilen renk hangi tarafa" hidden>
+    <button class="seg-btn" data-side="left">Sol taraf</button><button class="seg-btn active" data-side="right">Sağ taraf</button>
+  </div>
   <div class="finish-list" id="finishList"></div>
 </div>
+
+<!-- Araçlar -->
+<div class="popover tools-pop" id="toolsPop" hidden>
+  <div class="pop-title">Araçlar <span class="pop-hint">Köşe numunesine özel sunumlar</span></div>
+  <div class="tools-grid">
+    <button class="tool-tile" id="tStory"><svg viewBox="0 0 24 24"><path d="M4 18V6h6v6h8v6z"/><path d="M4 18l6-6" class="hot"/></svg><b>Üretim hikâyesi</b><small>Ekstrüzyon, 45° kesim, kaynak · 46 sn</small></button>
+    <button class="tool-tile" id="tLens" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.3 15.3L20 20"/><path d="M7.5 10.5h6M10.5 7.5v6" class="dim"/></svg><b>Röntgen merceği</b><small>PVC'nin içini görün: çelik, vida, conta</small></button>
+    <button class="tool-tile" id="tChambers"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M10 4v16M15 10v10" class="dim"/></svg><b>Kamaraları say</b><small>Kasa 14 · kanat 11 (s.9)</small></button>
+  </div>
+</div>
+
+<!-- Röntgen merceği -->
+<div class="lens-ring" id="lensRing" hidden aria-hidden="true"><span class="lens-tag">Röntgen</span><button class="lens-grip" id="lensGrip" aria-label="Merceği sürükle"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/></svg></button></div>
+<!-- Kamara sayacı -->
+<div class="chamber-count" id="chamberCount" hidden>
+  <div class="cc-row"><span class="cc-num" data-c="frame">0</span><span class="cc-lbl">kasa<br>kamarası</span></div>
+  <div class="cc-sep"></div>
+  <div class="cc-row"><span class="cc-num sash" data-c="sash">0</span><span class="cc-lbl">kanat<br>kamarası</span></div>
+  <span class="cc-src">s.9 kesit çizimi</span>
+  <button class="icon-btn small" id="chamberClose" aria-label="Kamara sayacını kapat"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</div>
+<div id="chamberLabels" hidden aria-hidden="true"></div>
+<div class="story-tag" id="storyTag" hidden>240–280 °C</div>
+<!-- Renk perdesi -->
+<div class="split-bar" id="splitBar" hidden><span class="split-label l" id="splitL"></span><span class="split-label r" id="splitR"></span><button class="split-grip" id="splitGrip" aria-label="Perdeyi sürükle"><svg viewBox="0 0 24 24"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></svg></button></div>
 
 <div id="tooltip" role="tooltip" hidden></div>
 <div id="dimLabels" aria-hidden="true"></div>
@@ -252,6 +285,7 @@
       <div class="kb"><kbd>O</kbd></div><div class="kb">360° otomatik döndür</div>
       <div class="kb"><kbd>E</kbd> · <kbd>C</kbd> · <kbd>D</kbd></div><div class="kb">Patlat · kesit · ölçüler</div>
       <div class="kb"><kbd>H</kbd> / <kbd>I</kbd></div><div class="kb">Seçili parçayı gizle / izole et</div>
+      <div class="kb"><kbd>U</kbd> · <kbd>X</kbd> · <kbd>K</kbd></div><div class="kb">Üretim hikâyesi · röntgen merceği · kamara sayacı</div>
       <div class="kb"><kbd>R</kbd> · <kbd>Esc</kbd></div><div class="kb">Sıfırla · seçimi kaldır</div>
     </div>
     <p class="help-note">Kesit geometrisi teknik dökümanın 9. sayfasındaki vektör çizimden birebir çıkarılmıştır; köşe düzeni s.6, s.8, s.10, s.11 ve s.14'e göredir. Tüm dosyalar yereldir; internet bağlantısı gerekmez.</p>

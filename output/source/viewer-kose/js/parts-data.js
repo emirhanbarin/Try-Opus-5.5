@@ -243,6 +243,9 @@ export const FINISHES = [
   { id: 'siyah',   label: 'Siyah',        mode: 1, a: '#202124', b: '#202124', rough: 0.48, coat: 0.35, bump: 0 },
   { id: 'altinmese', label: 'Altın meşe', mode: 2, a: '#bd8a55', b: '#8b5b31', rough: 0.55, coat: 0.2, bump: 0.5 },
   { id: 'ceviz',   label: 'Ceviz',        mode: 2, a: '#6f4b31', b: '#3e291b', rough: 0.55, coat: 0.2, bump: 0.5 },
+  // iki renkli: dış cephe folyolu, oda tarafı beyaz (iç/dış yüz ayrımı görsel amaçlıdır)
+  { id: 'dis_antrasit', label: 'Dış antrasit · iç beyaz', short: 'Dış antrasit', outer: 'antrasit', inner: 'beyaz' },
+  { id: 'dis_altinmese', label: 'Dış altın meşe · iç beyaz', short: 'Dış meşe', outer: 'altinmese', inner: 'beyaz' },
 ];
 
 // Teknik özellikler kartı: yalnızca dökümandaki değerler

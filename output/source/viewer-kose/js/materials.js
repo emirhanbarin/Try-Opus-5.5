@@ -4,7 +4,10 @@
 //  - Vurgu: üzerine gelme / seçim için fresnel kenar parlaması
 //  - Mikro yüzey: PVC'de ekstrüzyon kalıp izleri (kol ekseni boyunca), EPDM'de mat gren (yakın planda)
 //  - Kaynak dikişi: gönye düzleminde (x = y, nesne uzayı) ince çizgi; çıtada alın birleşimi aralığı
-//  - Folyo / renk: ikinci UV'deki folyo maskesi (dış kontur yüzleri) + ahşap desen (kol boyunca damar)
+//  - Folyo / renk: ikinci UV'deki folyo maskesi (dış kontur yüzleri) + ahşap desen (kol boyunca damar);
+//    dört renk seti: renk perdesinin solu/sağı × dış/iç yüz (iki renkli folyo)
+//  - Röntgen merceği (SUP_LENS): ekrandaki dairenin içinde PVC çizilmez
+//  - Üretim hikâyesi: gönye yüzü ısınması (uHeat) ve kesit yüzü renk katmanı (uCapTint)
 import * as THREE from '../vendor/three-bundle.min.js';
 
 export const shared = {
@@ -14,9 +17,14 @@ export const shared = {
   uAoStrength: { value: 1 },
   uMicro: { value: 1 },                                   // mikro yüzey şiddeti (düşük kademede 0)
   uSeam: { value: 1 },                                    // kaynak dikişi görünürlüğü
-  uFinish: { value: new THREE.Vector4(0, 0.34, 1, 0) },   // x: 0 yok · 1 düz renk · 2 ahşap; y: pürüzlülük; z: vernik çarpanı; w: kabartma
-  uFinishA: { value: new THREE.Color(1, 1, 1) },
-  uFinishB: { value: new THREE.Color(1, 1, 1) },
+  // renk setleri [sol dış, sol iç, sağ dış, sağ iç]; x: 0 yok · 1 düz renk · 2 ahşap; y: pürüzlülük; z: vernik çarpanı; w: kabartma
+  uFin: { value: [0, 1, 2, 3].map(() => new THREE.Vector4(0, 0.34, 1, 0)) },
+  uFinA: { value: [0, 1, 2, 3].map(() => new THREE.Color(1, 1, 1)) },
+  uFinB: { value: [0, 1, 2, 3].map(() => new THREE.Color(1, 1, 1)) },
+  uSplit: { value: new THREE.Vector2(0, 0) },             // renk perdesi: x = ayırma çizgisi (cihaz pikseli), y = açık
+  uLens: { value: new THREE.Vector4(0, 0, 0, 0) },        // röntgen merceği: xy merkez (gl_FragCoord), z yarıçap, w açık
+  uHeat: { value: 0 },                                    // kaynak: gönye yüzü ısınması (0..1)
+  uCapTint: { value: new THREE.Vector4(1, 0.5, 0.15, 0) }, // kesit yüzüne renk katmanı (rgb, miktar): ekstrüzyon parıltısı
   uWood: { value: null },
 };
 
@@ -64,6 +72,7 @@ function patch(material, key, opts = {}) {
   if (opts.grain) defs.SUP_GRAIN = '';
   if (opts.triplanarMap) defs.SUP_TRI = '';
   material.defines = Object.assign(material.defines || {}, defs);
+  material.userData.lensable = !!opts.lens;             // röntgen merceğinde görünmez olan malzemeler (PVC)
 
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, shared, material.userData.u);
@@ -96,7 +105,11 @@ uniform sampler2D uWood;
 uniform vec4 uClip; uniform float uClipOn; uniform float uAoMix; uniform float uAoStrength;
 uniform float uHi; uniform vec3 uHiColor; uniform vec3 uCapColor; uniform vec3 uCapHatch; uniform vec2 uHatch;
 uniform float uMicro; uniform float uSeam; uniform float uSeamK;
-uniform vec4 uFinish; uniform vec3 uFinishA; uniform vec3 uFinishB;
+uniform vec4 uFin[4]; uniform vec3 uFinA[4]; uniform vec3 uFinB[4]; uniform vec2 uSplit;
+uniform float uHeat; uniform vec4 uCapTint;
+#ifdef SUP_LENS
+uniform vec4 uLens;
+#endif
 #ifdef SUP_TRI
 uniform sampler2D uSpangle;
 #endif
@@ -138,17 +151,26 @@ float capHatch(vec3 wp){
       supDie = 0.5 + (supVN(supC * 2.3) - 0.5) * 0.65 * supA1 + (supVN(supC * 9.1 + 17.0) - 0.5) * 0.35 * supA2;
       supAmp = supA1 * uMicro * supSide;
 #endif
-      float supFoil = 0.0; float supGrain = 0.5;
+      float supFoil = 0.0; float supGrain = 0.5; float supHeatGlow = 0.0;
+      vec4 supF = uFin[0]; vec3 supFA = uFinA[0]; vec3 supFB = uFinB[0];
 #ifdef SUP_FOIL
-      supFoil = step(0.5, vFoil) * step(0.5, uFinish.x);
+      {
+        // renk seti: perdenin sağı/solu ve iç (oda tarafı) / dış yüz; iç: +Z'ye bakan ya da camın iç yarısındaki
+        // yan yüzler (sx > 55 mm, cam ortası; görsel ayrım)
+        bool supIn = supN0.z > 0.5 || (abs(supN0.z) <= 0.5 && vOPos.z * 1000.0 + 52.25 > 55.0);
+        bool supR = uSplit.y > 0.5 && gl_FragCoord.x > uSplit.x;
+        if (supR) { supF = supIn ? uFin[3] : uFin[2]; supFA = supIn ? uFinA[3] : uFinA[2]; supFB = supIn ? uFinB[3] : uFinB[2]; }
+        else { supF = supIn ? uFin[1] : uFin[0]; supFA = supIn ? uFinA[1] : uFinA[0]; supFB = supIn ? uFinB[1] : uFinB[0]; }
+      }
+      supFoil = step(0.5, vFoil) * step(0.5, supF.x);
       if (supFoil > 0.5) {
-        vec3 fc = uFinishA;
-        if (uFinish.x > 1.5) {
+        vec3 fc = supFA;
+        if (supF.x > 1.5) {
           float along = supLegX ? vOPos.x : vOPos.y;
           float across = supLegX ? (abs(supN0.y) > abs(supN0.z) ? vOPos.z : vOPos.y)
                                  : (abs(supN0.x) > abs(supN0.z) ? vOPos.z : vOPos.x);
           supGrain = texture2D(uWood, vec2(along * 2.0, across * 8.0)).r;     // 0,5 m × 0,125 m döşeme
-          fc = mix(uFinishB, uFinishA, supGrain);
+          fc = mix(supFB, supFA, supGrain);
         }
         diffuseColor.rgb = fc;
       }
@@ -172,7 +194,7 @@ float capHatch(vec3 wp){
       diffuseColor.rgb *= 0.86 + 0.2 * spg;
 #endif`)
       .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
-      roughnessFactor = mix(roughnessFactor, uFinish.y, supFoil);
+      roughnessFactor = mix(roughnessFactor, supF.y, supFoil);
 #ifdef SUP_DIE
       roughnessFactor *= 1.0 + (supDie - 0.5) * 0.18 * supAmp;
 #endif
@@ -192,7 +214,7 @@ float capHatch(vec3 wp){
 #endif
 #ifdef SUP_FOIL
       // folyo kabartması: yükseklik = desen × w × 0,1 mm (w 0,5 -> 50 µm); doku 4096 texel/m, texel ~2 pikselden küçülünce söner
-      float supBumpK = uFinish.w * (1.0 - smoothstep(0.4, 0.8, supPx * 4096.0));
+      float supBumpK = supF.w * (1.0 - smoothstep(0.4, 0.8, supPx * 4096.0));
       if (supFoil > 0.5 && supBumpK > 0.001) {
         vec2 dHdxy = vec2(dFdx(supGrain), dFdy(supGrain)) * supBumpK * 0.0001;
         vec3 vSigmaX = dFdx(-vViewPosition); vec3 vSigmaY = dFdy(-vViewPosition);
@@ -205,12 +227,24 @@ float capHatch(vec3 wp){
 #endif`)
       .replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>
 #ifdef USE_CLEARCOAT
-      material.clearcoat *= mix(1.0, uFinish.z, supFoil);
+      material.clearcoat *= mix(1.0, supF.z, supFoil);
 #endif`);
 
+    fs = fs.replace('#include <clipping_planes_fragment>', `#ifdef SUP_LENS
+  if ( uLens.w > 0.5 && distance( gl_FragCoord.xy, uLens.xy ) < uLens.z ) discard;
+#endif
+#include <clipping_planes_fragment>`);
+    fs = fs.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+#ifdef SUP_SEAM
+      // kaynak: ısıtıcı plakaya değen gönye yüzleri turuncu parlar (nesne uzayında x = y düzlemine uzaklık)
+      supHeatGlow = uHeat * (1.0 - smoothstep(0.0, 0.005, abs(vOPos.x - vOPos.y) * 0.70710678));
+      totalEmissiveRadiance += vec3(1.0, 0.34, 0.06) * supHeatGlow * 2.2;
+#endif`);
     fs = fs.replace('#include <dithering_fragment>', `#include <dithering_fragment>
   if ( !gl_FrontFacing ) {
     vec3 cc = mix( uCapColor, uCapHatch, capHatch( vWPos ) );
+    cc = mix( cc, vec3( 1.0, 0.42, 0.1 ), supHeatGlow );
+    cc = mix( cc, uCapTint.rgb, uCapTint.a );
     cc = mix( cc, uHiColor, uHi * 0.35 );
     gl_FragColor = vec4( cc, 1.0 );
   } else if ( uHi > 0.0 ) {
@@ -258,7 +292,7 @@ export function createMaterial(key, tex, def = {}, tier = 'high') {
     case 'cover':
       m = new THREE.MeshPhysicalMaterial({ ...common, color: 0xf3f3f0, roughness: 0.34, metalness: 0,
         clearcoat: 0.35, clearcoatRoughness: 0.28, specularIntensity: 0.6 });
-      return patch(m, key, { foil: !!def.foil, seam: def.seam || 0, die: key === 'pvc' });
+      return patch(m, key, { foil: !!def.foil, seam: def.seam || 0, die: key === 'pvc', lens: true });
     case 'steel':
       m = new THREE.MeshStandardMaterial({ ...common, color: 0xc2c7cc, roughness: 0.36, metalness: 1.0 });
       return patch(m, key, { triplanarMap: tex.spangle });
@@ -310,9 +344,20 @@ export function createGhostMaterial() {
   });
 }
 
-// Renk / folyo seçimi: FINISHES girdisine göre ortak uniform'lar
-export function applyFinish(f) {
-  shared.uFinish.value.set(f.mode, f.rough, f.coat, f.bump);
-  shared.uFinishA.value.set(f.a);   // onaltılık sRGB -> doğrusal çalışma uzayı (renk yönetimi)
-  shared.uFinishB.value.set(f.b);
+// Renk / folyo seçimi: dış ve iç yüz için FINISHES girdileri; slot 0 = perdenin solu (ya da tek renk), 1 = sağı
+export function applyFinish(outer, inner = outer, slot = 0) {
+  const set = (i, f) => {
+    shared.uFin.value[i].set(f.mode, f.rough, f.coat, f.bump);
+    shared.uFinA.value[i].set(f.a);   // onaltılık sRGB -> doğrusal çalışma uzayı (renk yönetimi)
+    shared.uFinB.value[i].set(f.b);
+  };
+  set(slot * 2, outer); set(slot * 2 + 1, inner);
+}
+// Röntgen merceği: PVC malzemelerinde SUP_LENS define'ı (açıkken discard; kapalıyken erken derinlik testi korunur)
+export function setLensDefine(materials, on) {
+  for (const m of materials) {
+    if (!m.userData.lensable || ('SUP_LENS' in m.defines) === on) continue;
+    if (on) m.defines.SUP_LENS = ''; else delete m.defines.SUP_LENS;
+    m.needsUpdate = true;
+  }
 }

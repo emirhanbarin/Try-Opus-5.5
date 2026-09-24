@@ -126,8 +126,17 @@ await page.locator('.finish-btn[data-finish="altinmese"]').click(); await page.w
 const fin = await ev(() => ({ mode: window.__viewer.app.state.finish, label: document.getElementById('finishName').textContent }));
 check('renk seçimi (Altın meşe)', fin.mode === 'altinmese' && fin.label === 'Altın meşe', JSON.stringify(fin));
 await shot(page, '05_altin_mese', 1500);
+await page.locator('.finish-btn[data-finish="dis_antrasit"]').click(); await page.waitForTimeout(1500);
+const bi = await ev(() => ({ f: window.__viewer.app.state.finish, label: document.getElementById('finishName').textContent }));
+check('iki renkli folyo (dış antrasit · iç beyaz)', bi.f === 'dis_antrasit' && bi.label === 'Dış antrasit', JSON.stringify(bi));
 await page.locator('.finish-btn[data-finish="beyaz"]').click(); await page.waitForTimeout(600);
-await ev(() => window.__viewer.app.closePopovers());
+await page.locator('label.toggle', { has: page.locator('#tglCompare') }).click(); await page.waitForTimeout(600);
+await page.locator('.finish-btn[data-finish="altinmese"]').click(); await page.waitForTimeout(2000);
+const cmp = await ev(() => ({ on: window.__viewer.app.state.compare.on, right: window.__viewer.app.state.compare.right, left: window.__viewer.app.state.finish,
+  bar: !document.getElementById('splitBar').hidden, labels: [document.getElementById('splitL').textContent, document.getElementById('splitR').textContent] }));
+check('renk perdesi: sol beyaz, sağ altın meşe', cmp.on && cmp.bar && cmp.left === 'beyaz' && cmp.right === 'altinmese', JSON.stringify(cmp));
+await shot(page, '05b_perde', 1200);
+await ev(() => { window.__viewer.app.setCompare(false); window.__viewer.app.closePopovers(); });
 
 // teknik özellikler
 await page.click('#btnSpecs'); await page.waitForTimeout(600);
@@ -177,18 +186,45 @@ await ev(() => { window.__viewer.modules.tour.goTo(5); window.__viewer.modules.t
 const wat = await ev(() => ({ water: window.__viewer.modules.water.active, ghost: window.__viewer.state.ghostSet ? window.__viewer.state.ghostSet.size : 0, info: { ...window.__viewer.lastInfo } }));
 check('tur: su tahliyesi animasyonu + hayalet görünüm', wat.water && wat.ghost >= 2, JSON.stringify(wat));
 await shot(page, '08_su_tahliyesi', 1500);
-await ev(() => { window.__viewer.modules.tour.goTo(7); window.__viewer.modules.tour.pause(true); });
-await page.waitForFunction(() => window.__viewer.state.explode > 0.98, null, { timeout: 120000 }).catch(() => {});
+// üretim hikâyesi: kaynak adımı (kollar ayrı mesh, ısıtıcı plaka, gönye ısınması) ve montaj adımı
+await ev(() => { const v = window.__viewer; v.modules.tour.goTo(7); v.modules.tour.pause(true); });
 await page.waitForTimeout(2500);
-const nCall = await page.locator('.callout').evaluateAll((els) => els.filter((e) => e.style.display !== 'none').length);
-check('tur: montaj sırası (patlatma etiketleri)', nCall >= 8, nCall + ' etiket');
-await shot(page, '09_montaj', 1500);
+await ev(() => { window.__viewer.modules.story.t = 23; });
+await page.waitForTimeout(3500);
+const st = await ev(() => { const s = window.__viewer.modules.story; return { active: s.active, step: s.stepIdx, legs: !!s.legs && s.legs.sill.visible && s.legs.jamb.visible,
+  plate: s.plate.visible, glow: s.glow.visible, kasa: window.__viewer.parts.get('kasa_profili').mesh.visible, title: document.querySelector('#tourCard .tc-title').textContent }; });
+check('tur: üretim hikâyesi (kaynak adımı)', st.active && st.step === 3 && st.legs && st.plate && st.glow && !st.kasa, JSON.stringify(st));
+await shot(page, '09_uretim_kaynak', 1500);
+await ev(() => { window.__viewer.modules.story.t = 40; });
+await page.waitForTimeout(3500);
+const st2 = await ev(() => { const s = window.__viewer.modules.story; return { step: s.stepIdx, legs: s.legs.sill.visible, parts: [...window.__viewer.parts.values()].filter((p) => p.mesh.visible).length }; });
+check('tur: üretim hikâyesi (montaj adımı, tüm parçalar)', st2.step === 5 && !st2.legs && st2.parts === 26, JSON.stringify(st2));
 await page.click('#tcClose');
 // geri dönüş patlatması 2,4 sn sürer; yazılımsal GL'de kare ~1 sn olduğundan sabit bekleme yerine bitişini bekle
 await page.waitForFunction(() => !window.__viewer.state.explodeAnim, null, { timeout: 30000 }).catch(() => {});
 await page.waitForTimeout(500);
 const rest = await ev(() => ({ active: window.__viewer.modules.tour.active, clip: window.__viewer.state.clip.on, ghost: window.__viewer.state.ghostSet, water: window.__viewer.modules.water.active, tgt: window.__viewer.state.explodeTarget }));
 check('turdan çık: durum geri yüklendi', !rest.active && !rest.clip && !rest.ghost && !rest.water && rest.tgt === 0, JSON.stringify(rest));
+// tur bölümleri: kamara sayacı ve röntgen merceği
+await ev(() => { const v = window.__viewer; v.modules.tour.start(); v.modules.tour.goTo(2); v.modules.tour.pause(true); });
+await page.waitForFunction(() => !window.__viewer.modules.chambers.anim, null, { timeout: 60000 }).catch(() => {});
+await page.waitForTimeout(1500);
+const chs = await ev(() => { const c = window.__viewer.modules.chambers; return { vis: c.mesh.visible, f: document.querySelector('#chamberCount [data-c="frame"]').textContent,
+  s: document.querySelector('#chamberCount [data-c="sash"]').textContent, labels: [...document.querySelectorAll('#chamberLabels .ch-num')].filter((e) => e.style.opacity === '1').length }; });
+check('tur: kamara sayacı (kasa 14, kanat 11)', chs.vis && chs.f === '14' && chs.s === '11' && chs.labels >= 20, JSON.stringify(chs));
+await shot(page, '09a_kamara', 800);
+await ev(() => { const v = window.__viewer; v.modules.tour.goTo(3); v.modules.tour.pause(true); });
+await page.waitForTimeout(3000);
+const lns = await ev(() => ({ on: window.__viewer.modules.lens.on, def: 'SUP_LENS' in window.__viewer.parts.get('kasa_profili').mat.defines,
+  ring: !document.getElementById('lensRing').hidden }));
+check('tur: röntgen merceği (PVC gizlenir)', lns.on && lns.def && lns.ring, JSON.stringify(lns));
+await shot(page, '09b_rontgen', 800);
+await ev(() => window.__viewer.modules.tour.stop(false));
+await page.waitForTimeout(1000);
+const offs = await ev(() => ({ lens: window.__viewer.modules.lens.on, ch: window.__viewer.modules.chambers.mesh.visible,
+  def: 'SUP_LENS' in window.__viewer.parts.get('kasa_profili').mat.defines, tour: window.__viewer.modules.tour.active }));
+check('turdan çıkınca mercek ve sayaç kapanır', !offs.lens && !offs.ch && !offs.def && !offs.tour, JSON.stringify(offs));
+
 // tüm tur bölümleri: her bölümün en yoğun karesi bütçe içinde (x-ray bölümleri dahil)
 const perCh = [];
 await ev(() => window.__viewer.modules.tour.start());
@@ -248,10 +284,12 @@ await shot(kp, '11_kiosk_etkilesim', 1500);
 // düz kesite geçişte kiosk ayarları korunur (ekran görüntüsü sırasında boşta süresi dolmuş olabilir: sayacı sıfırla)
 await kp.evaluate(() => { const k = window.__viewer.modules.kiosk; if (k.attract) k.exitAttract(); k.poke(); });
 await kp.waitForTimeout(800);
-await kp.locator('.page-switch a:not(.active)').click();
+const kState = await kp.evaluate(() => ({ body: document.body.className, fatal: !!document.querySelector('.fatal'), url: location.search }));
+// bağlantının kendi tıklama işleyicisi (parametre aktarımı); isabet testi yazılımsal GL'de uzun ekran görüntüsünden etkilenebilir
+await kp.evaluate(() => document.querySelector('.page-switch a:not(.active)').click());
 await kp.waitForURL(/kesit\.html/, { timeout: 30000, waitUntil: 'commit' }).catch(() => {});
 const kUrl = new URL(kp.url());
-check('kiosk: sayfa geçişinde ayarlar korunur', kUrl.pathname.endsWith('kesit.html') && ['kiosk', 'idle', 'fs', 'aa'].every((x) => kUrl.searchParams.has(x)), kUrl.search);
+check('kiosk: sayfa geçişinde ayarlar korunur', kUrl.pathname.endsWith('kesit.html') && ['kiosk', 'idle', 'fs', 'aa'].every((x) => kUrl.searchParams.has(x)), kUrl.search + ' · ' + JSON.stringify(kState));
 await k.ctx.close();
 
 const errors = logs.filter((l) => /\[(pageerror|error)\]|requestfailed/.test(l));

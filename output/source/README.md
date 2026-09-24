@@ -16,7 +16,7 @@ Siteyi (`../site`) üreten ham dosyalar ve betikler. Sunulmaz; yeniden üretim i
 | `env/` | Stüdyo HDRI: v1 prosedürel (`studio.ktx2`, düz kesit), v2 Blender/Cycles (`studio2.ktx2`, köşe) |
 | `tex/` | Galvaniz deseni, ahşap folyo deseni (KTX2 + önizleme) |
 | `viewer/` | Düz kesit görüntüleyicisi: ES modül kaynakları, three.js paketi, derleme betiği |
-| `viewer-kose/` | Köşe görüntüleyicisi (fuar sürümü): tur, işaretler, su animasyonu, kiosk, çizim bindirme modülleri |
+| `viewer-kose/` | Köşe görüntüleyicisi (fuar sürümü): tur, işaretler, su animasyonu, kiosk, çizim bindirme, üretim hikâyesi (`story.js`), röntgen merceği (`lens.js`), kamara sayacı (`chambers.js`) modülleri |
 
 Yeniden üretim (Python 3.11 + `pip install bpy pymupdf shapely scipy pillow`, KTX-Software 4.3, Node + `@gltf-transform/cli`, `esbuild`, `playwright-core`):
 
@@ -50,7 +50,8 @@ Yeniden üretim (Python 3.11 + `pip install bpy pymupdf shapely scipy pillow`, K
 7. Görüntüleyiciye gömülen PDF verileri:
    - `scripts/extract_drawing_lines.py`: s.9 çizim bindirmesi → `viewer-kose/js/drawing-data.js`.
    - `scripts/extract_water_path.py`: s.9 su okları + yarık konumları → `viewer-kose/js/water-path.js`. Yol, kesit poligonlarına göre denetlenir.
-8. `viewer-kose/build.sh`: kaynakları `../site/js/kose.js`'e derler ve `assets/kose/assets-embedded.js`'i üretir.
+   - `scripts/extract_rings.py`: `section_mm.json` → `viewer-kose/js/rings-data.js` (0,05 mm sadeleştirilmiş dış konturlar: kaynak taşıntısı, tam pencere) ve `chambers-data.js` (kasa 14, kanat 11 kamara).
+8. `viewer-kose/build.sh`: kaynakları `../site/js/kose.js`'e derler ve `assets/kose/assets-embedded.js`'i üretir. three.js alt kümesi değişirse önce `viewer-kose/build-vendor.sh` (`vendor-entry.js` → `vendor/three-bundle.min.js`).
 
 **Denetim ve testler**
 - `scripts/preview_corner.py`: Cycles geometri önizlemeleri.

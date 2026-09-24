@@ -1,5 +1,6 @@
-// Keşif turu: veri güdümlü bölümler (kamera, patlatma, kesit, hayalet görünüm, izolasyon, işaretler, su, renk).
-// Normal kullanımda ileri/geri/duraklat; kiosk tanıtım modunda döngüde oynar.
+// Keşif turu: veri güdümlü bölümler (kamera, patlatma, kesit, hayalet görünüm, izolasyon, işaretler, su, renk,
+// üretim hikâyesi, röntgen merceği, kamara sayacı). Normal kullanımda ileri/geri/duraklat; kiosk tanıtım modunda
+// döngüde oynar; start({ only }) tek bir bölümü oynatıp biter (Araçlar'dan üretim hikâyesi).
 import { TOUR } from './tour-data.js';
 
 export class Tour {
@@ -27,8 +28,9 @@ export class Tour {
     app.renderer.domElement.addEventListener('pointerdown', () => { if (this.active && !this.attract && !this.paused) this.pause(true); });
   }
   toggle() { if (this.active) this.stop(); else this.start(); }
-  start({ loop = false, attract = false } = {}) {
+  start({ loop = false, attract = false, only = null } = {}) {
     const app = this.app, s = app.state;
+    this.only = only != null ? Math.max(0, TOUR.findIndex((c) => c.id === only)) : null;
     if (!this.active) {
       // patlatma animasyonu sürüyorsa ara değer değil hedef kaydedilir; gizle/izole durumu da korunur
       this.saved = { explode: s.explodeAnim ? s.explodeAnim.to : s.explodeTarget, finish: s.finish, turn: app.turn.on,
@@ -40,10 +42,13 @@ export class Tour {
     this.card.hidden = false;
     app.$('btnTour').classList.add('active'); app.$('btnTour').querySelector('span').textContent = 'Turu bitir';
     app.select(null); app.closePopovers();
-    this.goTo(0);
+    this.card.classList.toggle('single', this.only != null);
+    this.goTo(this.only ?? 0);
   }
   cleanup() {
     const app = this.app, m = app.modules;
+    m.story?.stop(); m.chambers?.stop();
+    if (m.lens?.on) { m.lens.setOn(false); app.$('tLens')?.setAttribute('aria-pressed', 'false'); }
     m.water.stop(); m.hotspots.setVisible(false); m.hotspots.setCallouts(false);
     app.setGhost(null);
     app.state.soloSet = null; app.parts.forEach((p) => (p.visible = true)); app.refreshVisibility();
@@ -71,6 +76,9 @@ export class Tour {
     // kamera: patlatma hedefine göre sığdırılmış poz
     const pose = app.viewPose(ch.view, ch.explode || 0);
     app.animateCamera(pose.pos, pose.target, 1500, pose.fov);
+    if (ch.lens) m.lens.setOn(true, { auto: true });
+    if (ch.chambers) m.chambers.run();
+    if (ch.story) m.story.start({ caption: (t, x) => this.setCaption(t, x) });
     // kart
     this.el.count.textContent = `${this.i + 1} / ${TOUR.length}`;
     this.el.title.textContent = ch.title;
@@ -80,7 +88,15 @@ export class Tour {
     this.el.bar.style.width = '0%';
     app.requestRender();
   }
-  next() { if (this.i + 1 >= TOUR.length && !this.loop) { this.stop(); return; } this.goTo(this.i + 1); }
+  next() {
+    if (this.only != null || (this.i + 1 >= TOUR.length && !this.loop)) { this.stop(); return; }
+    this.goTo(this.i + 1);
+  }
+  // bölüm içinde değişen başlık (üretim hikâyesi adımları)
+  setCaption(title, text) {
+    this.el.title.textContent = title; this.el.text.textContent = text;
+    this.card.classList.remove('swap'); void this.card.offsetWidth; this.card.classList.add('swap');
+  }
   prev() { this.goTo(this.i - 1); }
   pause(force) {
     this.paused = force === true ? true : !this.paused;
@@ -93,7 +109,7 @@ export class Tour {
     const app = this.app;
     this.active = false; this.paused = false; this.card.classList.remove('paused');
     document.body.classList.remove('touring', 'attract');
-    this.card.hidden = true;
+    this.card.hidden = true; this.card.classList.remove('single'); this.only = null;
     app.$('btnTour').classList.remove('active'); app.$('btnTour').querySelector('span').textContent = 'Keşif turu';
     this.cleanup();
     if (restore && this.saved) {

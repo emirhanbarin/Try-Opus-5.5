@@ -59,7 +59,7 @@ body.kose.ready #scene { animation: sceneIn 1.2s ease both; }
 .toggle input:checked + .tg::after { transform: translateX(16px); }
 .toggle input:focus-visible + .tg { box-shadow: 0 0 0 3px rgba(92, 200, 255, .45); }
 .views-pop .toggle { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
-.finish-list { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.finish-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .finish-btn { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 8px 4px 7px; border-radius: 11px; border: 1px solid transparent; background: transparent;
   cursor: pointer; font-size: 11.5px; color: var(--muted); transition: background .15s, border-color .15s, color .15s; }
 .finish-btn:hover { background: rgba(255, 255, 255, .06); color: var(--text); }
@@ -200,7 +200,7 @@ body.no-cursor, body.no-cursor * { cursor: none !important; }
   .tour-card { bottom: 84px; padding: 12px 14px; }
   .tc-title { font-size: 18px; }
   .tc-text { font-size: 13px; }
-  .finish-list { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .finish-list { grid-template-columns: repeat(4, 1fr); gap: 4px; }
   .finish-sw { width: 30px; height: 30px; }
   .hot-card { left: 12px; right: 12px; width: auto; top: auto; bottom: 150px; }
 }
@@ -218,3 +218,67 @@ body.no-cursor, body.no-cursor * { cursor: none !important; }
 .cert-basis { font-size: 12.5px; opacity: .7; margin-top: 3px; }
 .spec-sep { margin-top: 14px; }
 .cert-badge[hidden] { display: none; }
+
+/* ---------- iki renkli folyo + renk perdesi ---------- */
+.finish-sw.bi { background: linear-gradient(90deg, transparent 0 50%, var(--i) 50% 100%), var(--a); }
+.finish-sw.wood.bi { background: linear-gradient(90deg, transparent 0 50%, var(--i) 50% 100%),
+  repeating-linear-gradient(172deg, var(--a) 0 3px, var(--b) 3px 4px, var(--a) 4px 7px, color-mix(in srgb, var(--a), var(--b) 45%) 7px 8px); }
+.finish-btn.right { box-shadow: inset 0 0 0 2px #ffb03a; }
+.compare-side { margin: 4px 0 12px; }
+.finish-pop .toggle { margin-bottom: 8px; }
+.split-bar { position: fixed; left: 0; top: 0; bottom: 0; width: 0; z-index: 5; pointer-events: none; }
+.split-bar::before { content: ''; position: absolute; left: -1px; top: 0; bottom: 0; width: 2px; background: rgba(255, 255, 255, .9); box-shadow: 0 0 14px rgba(0, 0, 0, .55); }
+.split-grip { position: absolute; left: -24px; top: 50%; width: 48px; height: 48px; margin-top: -24px; border-radius: 50%; display: grid; place-items: center;
+  border: 2px solid #fff; background: rgba(12, 15, 20, .8); pointer-events: auto; cursor: ew-resize; touch-action: none; box-shadow: 0 6px 18px rgba(0, 0, 0, .45); }
+.split-grip svg { width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.split-label { position: absolute; top: 96px; padding: 5px 11px; border-radius: 9px; background: rgba(12, 15, 20, .74); border: 1px solid var(--line2);
+  font-size: 12.5px; font-weight: 650; white-space: nowrap; }
+.split-label.l { right: 14px; }
+.split-label.r { left: 14px; border-color: rgba(255, 176, 58, .6); }
+body.kiosk .split-grip { width: 64px; height: 64px; left: -32px; margin-top: -32px; }
+
+/* ---------- araçlar ---------- */
+.tools-pop { width: min(560px, calc(100vw - 32px)); }
+.tools-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tool-tile { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px 12px 13px; border-radius: 12px; border: 1px solid var(--line2);
+  background: rgba(255, 255, 255, .03); color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: background .15s, border-color .15s; }
+.tool-tile svg { width: 28px; height: 28px; fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.tool-tile svg .dim { opacity: .5; }
+.tool-tile svg .hot { stroke: #ff8a3c; stroke-width: 2.2; }
+.tool-tile b { font-size: 14px; font-weight: 650; }
+.tool-tile small { font-size: 12px; color: var(--muted); line-height: 1.3; }
+.tool-tile:hover { background: rgba(255, 255, 255, .07); }
+.tool-tile[aria-pressed="true"] { border-color: rgba(92, 200, 255, .6); background: var(--accent-soft); }
+body.kiosk .tool-tile { padding: 16px; }
+body.kiosk .tool-tile b { font-size: 16px; }
+@media (max-width: 820px) { .tools-grid { grid-template-columns: 1fr; } }
+
+/* ---------- röntgen merceği ---------- */
+.lens-ring { position: fixed; left: 0; top: 0; z-index: 5; border-radius: 50%; pointer-events: none;
+  border: 2px solid rgba(140, 225, 255, .95); box-shadow: 0 0 0 1px rgba(0, 0, 0, .35), 0 0 30px rgba(92, 200, 255, .55), inset 0 0 34px rgba(92, 200, 255, .3); }
+.lens-tag { position: absolute; left: 50%; top: -10px; transform: translate(-50%, -100%); padding: 3px 11px; border-radius: 999px; font-size: 11.5px; font-weight: 750;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--accent-ink); background: var(--accent); box-shadow: 0 0 16px rgba(92, 200, 255, .6); }
+.lens-grip { position: absolute; right: 4%; bottom: 4%; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; pointer-events: auto;
+  cursor: grab; touch-action: none; border: 2px solid rgba(140, 225, 255, .95); background: rgba(12, 15, 20, .82); }
+.lens-grip svg { width: 22px; height: 22px; fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round; }
+body.kiosk .lens-grip { width: 62px; height: 62px; }
+
+/* ---------- kamara sayacı ---------- */
+.chamber-count { position: fixed; left: 50%; top: 84px; transform: translateX(-50%); z-index: 8; display: flex; align-items: center; gap: 18px;
+  padding: 12px 12px 12px 22px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line2); box-shadow: var(--shadow);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.cc-row { display: flex; align-items: center; gap: 10px; }
+.cc-num { font-size: 44px; font-weight: 780; line-height: 1; color: #6fd0ff; font-variant-numeric: tabular-nums; min-width: 1.25em; text-align: right; }
+.cc-num.sash { color: #5ee0b4; }
+.cc-lbl { font-size: 13px; line-height: 1.2; color: var(--muted); }
+.cc-sep { width: 1px; height: 40px; background: var(--line2); }
+.cc-src { position: absolute; left: 22px; bottom: -19px; font-size: 11px; color: var(--faint); }
+#chamberLabels .ch-num { position: fixed; left: 0; top: 0; z-index: 4; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px; display: grid; place-items: center;
+  font-size: 10.5px; font-weight: 750; color: #06202d; background: rgba(235, 248, 255, .92); pointer-events: none; transition: opacity .3s; }
+#chamberLabels .ch-num.sash { background: rgba(214, 255, 240, .92); }
+body.attract .chamber-count #chamberClose { display: none; }
+
+/* ---------- üretim hikâyesi ---------- */
+.story-tag { position: fixed; left: 0; top: 0; z-index: 6; padding: 6px 13px; border-radius: 999px; font-weight: 750; font-size: 15px; color: #fff;
+  background: linear-gradient(90deg, #ff6a1a, #ffb03a); box-shadow: 0 0 26px rgba(255, 120, 40, .6); pointer-events: none; }
+.tour-card.single .tc-dots, .tour-card.single .tc-count { visibility: hidden; }
