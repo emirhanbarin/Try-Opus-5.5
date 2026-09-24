@@ -76,16 +76,30 @@ td.k { white-space: nowrap; font-weight: 600; }
     <tr><td><strong>Bu kılavuz</strong> ve <strong>teknik dokümantasyon</strong></td><td>Yeniden yapım tarifi ve sistemin tarifi.</td><td>Sohbette gönderildi; depoda <code>output/docs/</code>.</td></tr>
     <tr><td><strong>Site ZIP'i</strong> (<code>Supremo85_3B_site.zip</code>)</td><td>Çalışan son site. Kurulum gerekmez; <code>index.html</code>'e çift tıklamak yeterli.</td><td>Sohbette gönderildi.</td></tr>
     <tr><td><strong>GitHub deposu</strong>, dal <code>claude/festive-noether-f394lu</code></td><td>Tüm kaynak kod, betikler, ara dosyalar ve commit geçmişi.</td><td>GitHub, <code>emirhanbarin</code> hesabı altındaki bu projenin deposu.</td></tr>
-    <tr><td><strong>Depo yedeği</strong> (önerilir)</td><td>GitHub erişimi ya da dal kaybolursa kod ve geçmiş bu tek dosyadan geri gelir (<code>git clone yedek.bundle</code>).</td><td>Sohbette gönderildi (varsa); siz saklayın.</td></tr>
+    <tr><td><strong>Depo yedeği</strong> (önerilir; <code>Supremo85_proje_yedegi.bundle</code>)</td><td>GitHub erişimi ya da dal kaybolursa kod ve bütün commit geçmişi bu dosyadan geri gelir.</td><td>Sohbette gönderildi; gönderim sınırı yüzünden iki parça (<code>.parca1</code>, <code>.parca2</code>). Siz saklayın.</td></tr>
   </tbody>
 </table>
 <div class="note warn"><p><strong>Önemli:</strong> Çalışma dalı henüz ana dala (<code>main</code>) birleştirilmedi. Dal silinirse kod da gider. Kalıcı güvence için dalı birleştirin ya da depo yedeğini saklayın.</p></div>
+<p><strong>Depo yedeğini açmak:</strong> önce parçalar birleştirilir, sonra yedek sıradan bir depo gibi klonlanır. Git kurulu herhangi bir bilgisayarda çalışır; istenirse yeni bir GitHub deposuna gönderilir.</p>
+<pre><code># macOS / Linux
+cat Supremo85_proje_yedegi.bundle.parca1 Supremo85_proje_yedegi.bundle.parca2 \
+  &gt; Supremo85_proje_yedegi.bundle
+# Windows (komut istemi)
+copy /b Supremo85_proje_yedegi.bundle.parca1+Supremo85_proje_yedegi.bundle.parca2 ^
+  Supremo85_proje_yedegi.bundle
+
+git bundle verify Supremo85_proje_yedegi.bundle
+git clone Supremo85_proje_yedegi.bundle Supremo85 -b claude/festive-noether-f394lu
+# yeni bir GitHub deposuna göndermek için (isteğe bağlı)
+cd Supremo85
+git remote set-url origin &lt;yeni depo adresi&gt;
+git push -u origin claude/festive-noether-f394lu</code></pre>
 
 <h2 id="s1-3">1.3 Kurtarma senaryoları</h2>
 <table>
   <thead><tr><th style="width:24%">Durum</th><th>Ne yapılır</th></tr></thead>
   <tbody>
-    <tr><td><strong>A. Depo duruyor</strong><br><span class="muted small">en kolay yol</span></td><td>Yeni oturumda depoyu bağlayın ve 10.5'teki "devam" istemini verin. Oturum dalı çeker, README'leri ve bu kılavuzu okur, testleri çalıştırır. Kod zaten hazırdır; kılavuz yalnızca bağlam sağlar.</td></tr>
+    <tr><td><strong>A. Depo duruyor</strong><br><span class="muted small">en kolay yol</span></td><td>Yeni oturumda depoyu bağlayın ve 10.5'teki "devam" istemini verin. Oturum dalı çeker, README'leri ve bu kılavuzu okur, testleri çalıştırır. Kod zaten hazırdır; kılavuz yalnızca bağlam sağlar. GitHub'daki depo kaybolduysa önce depo yedeğinden (1.2) geri kurup yeni bir depoya gönderin; sonrası aynı.</td></tr>
     <tr><td><strong>B. Depo yok, site ZIP'i var</strong></td><td>Site olduğu gibi çalışır; fuar için yeterlidir. Değişiklik gerekiyorsa üretim hattı da gerekir: C yoluna geçin. Site ZIP'ini yeni oturuma verirseniz görsel hedef olarak kullanılabilir.</td></tr>
     <tr><td><strong>C. Her şey kayıp</strong><br><span class="muted small">yalnız PDF'ler var</span></td><td>İki kaynak PDF'yi ve bu kılavuzu yeni oturuma yükleyin, 10.2'deki ana istemi verin ve 10.3'teki aşamaları sırayla yürütün. Sonuç kod olarak birebir aynı olmaz; ama aynı yöntemler, sayılar ve kabul ölçütleri kullanıldığı için işlev ve görünüm aynı olur.</td></tr>
   </tbody>
