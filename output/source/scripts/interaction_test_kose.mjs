@@ -34,6 +34,8 @@ const shot = async (page, name, wait = 3500) => { await page.waitForTimeout(wait
 // ------------------------------------------------------------------ ana test
 const { page, ctx, origins, loadS } = await openPage(q(url0, 'intro=0&spin=0&aa=0'));
 const ev = (fn, a) => page.evaluate(fn, a);
+// tur bölümü sırası kimlikle bulunur (bölüm eklenince test kaymasın)
+const chIdx = (id) => ev((id) => window.__viewer.modules.tour.ids.indexOf(id), id);
 check('yükleme tamamlandı', true, loadS.toFixed(1) + ' sn');
 await shot(page, '01_acilis');
 const nRows = await page.locator('.part-row').count();
@@ -182,12 +184,13 @@ await page.click('#btnTour'); await page.waitForTimeout(2500);
 check('tur başladı', await ev(() => window.__viewer.modules.tour.active && !document.getElementById('tourCard').hidden));
 await page.click('#tcNext'); await page.waitForTimeout(3000);
 check('tur: kaynak bölümü (gönye kesiti)', await ev(() => window.__viewer.modules.tour.i === 1 && window.__viewer.state.clip.on && window.__viewer.state.clip.axis === 'd'));
-await ev(() => { window.__viewer.modules.tour.goTo(5); window.__viewer.modules.tour.pause(true); }); await page.waitForTimeout(5000);
+const I = { su: await chIdx('su'), uretim: await chIdx('uretim'), kamara: await chIdx('kamara'), celik: await chIdx('celik'), isi: await chIdx('isi') };
+await ev((i) => { window.__viewer.modules.tour.goTo(i); window.__viewer.modules.tour.pause(true); }, I.su); await page.waitForTimeout(5000);
 const wat = await ev(() => ({ water: window.__viewer.modules.water.active, ghost: window.__viewer.state.ghostSet ? window.__viewer.state.ghostSet.size : 0, info: { ...window.__viewer.lastInfo } }));
 check('tur: su tahliyesi animasyonu + hayalet görünüm', wat.water && wat.ghost >= 2, JSON.stringify(wat));
 await shot(page, '08_su_tahliyesi', 1500);
 // üretim hikâyesi: kaynak adımı (kollar ayrı mesh, ısıtıcı plaka, gönye ısınması) ve montaj adımı
-await ev(() => { const v = window.__viewer; v.modules.tour.goTo(7); v.modules.tour.pause(true); });
+await ev((i) => { const v = window.__viewer; v.modules.tour.goTo(i); v.modules.tour.pause(true); }, I.uretim);
 await page.waitForTimeout(2500);
 await ev(() => { window.__viewer.modules.story.t = 23; });
 await page.waitForTimeout(3500);
@@ -206,14 +209,20 @@ await page.waitForTimeout(500);
 const rest = await ev(() => ({ active: window.__viewer.modules.tour.active, clip: window.__viewer.state.clip.on, ghost: window.__viewer.state.ghostSet, water: window.__viewer.modules.water.active, tgt: window.__viewer.state.explodeTarget }));
 check('turdan çık: durum geri yüklendi', !rest.active && !rest.clip && !rest.ghost && !rest.water && rest.tgt === 0, JSON.stringify(rest));
 // tur bölümleri: kamara sayacı ve röntgen merceği
-await ev(() => { const v = window.__viewer; v.modules.tour.start(); v.modules.tour.goTo(2); v.modules.tour.pause(true); });
+await ev((i) => { const v = window.__viewer; v.modules.tour.start(); v.modules.tour.goTo(i); v.modules.tour.pause(true); }, I.kamara);
 await page.waitForFunction(() => !window.__viewer.modules.chambers.anim, null, { timeout: 60000 }).catch(() => {});
 await page.waitForTimeout(1500);
 const chs = await ev(() => { const c = window.__viewer.modules.chambers; return { vis: c.mesh.visible, f: document.querySelector('#chamberCount [data-c="frame"]').textContent,
   s: document.querySelector('#chamberCount [data-c="sash"]').textContent, labels: [...document.querySelectorAll('#chamberLabels .ch-num')].filter((e) => e.style.opacity === '1').length }; });
 check('tur: kamara sayacı (kasa 14, kanat 11)', chs.vis && chs.f === '14' && chs.s === '11' && chs.labels >= 20, JSON.stringify(chs));
 await shot(page, '09a_kamara', 800);
-await ev(() => { const v = window.__viewer; v.modules.tour.goTo(3); v.modules.tour.pause(true); });
+await ev((i) => { const v = window.__viewer; v.modules.tour.goTo(i); v.modules.tour.pause(true); }, I.isi);
+await page.waitForFunction(() => window.__viewer.modules.thermal.k > 0.99, null, { timeout: 30000 }).catch(() => {});
+const thc = await ev(() => { const v = window.__viewer, c = v.modules.chambers; return { on: v.modules.thermal.on, k: +v.modules.thermal.k.toFixed(2),
+  legend: !document.getElementById('thermLegend').hidden, fill: c.mesh.visible && c.uniforms.uMode.value === 1, uf: document.getElementById('thermUf').textContent }; });
+check('tur: ısı haritası (kesit sıcaklık renginde, resmi Uf açıklamada)', thc.on && thc.k === 1 && thc.legend && thc.fill && /1,0/.test(thc.uf), JSON.stringify(thc));
+await shot(page, '09c_isi', 800);
+await ev((i) => { const v = window.__viewer; v.modules.tour.goTo(i); v.modules.tour.pause(true); }, I.celik);
 await page.waitForTimeout(3000);
 const lns = await ev(() => ({ on: window.__viewer.modules.lens.on, def: 'SUP_LENS' in window.__viewer.parts.get('kasa_profili').mat.defines,
   ring: !document.getElementById('lensRing').hidden }));
@@ -222,8 +231,63 @@ await shot(page, '09b_rontgen', 800);
 await ev(() => window.__viewer.modules.tour.stop(false));
 await page.waitForTimeout(1000);
 const offs = await ev(() => ({ lens: window.__viewer.modules.lens.on, ch: window.__viewer.modules.chambers.mesh.visible,
-  def: 'SUP_LENS' in window.__viewer.parts.get('kasa_profili').mat.defines, tour: window.__viewer.modules.tour.active }));
-check('turdan çıkınca mercek ve sayaç kapanır', !offs.lens && !offs.ch && !offs.def && !offs.tour, JSON.stringify(offs));
+  def: 'SUP_LENS' in window.__viewer.parts.get('kasa_profili').mat.defines, tour: window.__viewer.modules.tour.active, th: window.__viewer.modules.thermal.on }));
+check('turdan çıkınca mercek, sayaç ve ısı haritası kapanır', !offs.lens && !offs.ch && !offs.def && !offs.tour && !offs.th, JSON.stringify(offs));
+
+// araçlar: ısı haritası (döşeme + S tuşu), canlı 2B kesit (yarık / vida etiketleri), ölçüm (bilinen 85 mm)
+await page.click('#btnTools'); await page.click('#tThermal');
+await page.waitForFunction(() => window.__viewer.modules.thermal.k > 0.99, null, { timeout: 30000 }).catch(() => {});
+const th1 = await ev(() => ({ on: window.__viewer.modules.thermal.on, pressed: document.getElementById('tThermal').getAttribute('aria-pressed'), legend: !document.getElementById('thermLegend').hidden }));
+await page.keyboard.press('s');
+await page.waitForFunction(() => window.__viewer.modules.thermal.k < 0.01, null, { timeout: 30000 }).catch(() => {});
+const th2 = await ev(() => ({ on: window.__viewer.modules.thermal.on, k: window.__viewer.modules.thermal.k, fill: window.__viewer.modules.chambers.mesh.visible, legend: !document.getElementById('thermLegend').hidden }));
+check('ısı haritası: Araçlar ile açılır, S ile kapanır', th1.on && th1.pressed === 'true' && th1.legend && !th2.on && th2.k === 0 && !th2.fill && !th2.legend, JSON.stringify({ th1, th2 }));
+const insetAt = async (pos) => {
+  await ev((pos) => window.__viewer.app.setClip('x', pos), pos);
+  await page.waitForFunction((pos) => { const i = window.__viewer.modules.inset; return i.visible && i.sig.startsWith('x|' + pos.toFixed(2)); }, pos, { timeout: 30000 }).catch(() => {});
+  return ev(() => ({ vis: !document.getElementById('secInset').hidden, tags: window.__viewer.modules.inset.last?.tags || [], parts: window.__viewer.modules.inset.last?.parts.length }));
+};
+const in230 = await insetAt(230), in150 = await insetAt(150);
+check('canlı 2B kesit: A yarığı (X 230) ve kasa vidası (X 150) etiketleri', in230.vis && in230.tags.some((t) => t.startsWith('A yarığı')) && in150.tags.some((t) => /Kasa takviye vidası/.test(t)) && in150.parts >= 15,
+  JSON.stringify({ a: in230.tags, b: in150.tags, parts: in150.parts }));
+await shot(page, '10a_canli_kesit', 800);
+await ev(() => { const t = document.getElementById('tglInset'); t.checked = false; t.dispatchEvent(new Event('change')); });
+await page.waitForTimeout(800);
+const inOff = await ev(() => document.getElementById('secInset').hidden);
+await ev(() => { const t = document.getElementById('tglInset'); t.checked = true; t.dispatchEvent(new Event('change')); window.__viewer.app.state.clip.on = false; window.__viewer.app.updateClip(); });
+check('canlı 2B kesit: anahtarla gizlenir', inOff);
+// ölçüm: uç yüzde ve X = 150 kesit yüzünde kasa genişliği (s.9: 85 mm); kamera oturduktan sonra aynı karede hesaplanıp dokunulur
+await page.click('#btnTools'); await page.click('#tMeasure');
+const measureAcross = async (X) => {
+  await page.waitForFunction(() => !window.__viewer.state.camAnim, null, { timeout: 30000 }).catch(() => {});
+  await page.waitForTimeout(2500);
+  return ev((X) => { const a = window.__viewer.app, m = a.modules.measure; m.clear();
+    const at = (sx) => { const v = a.toWorld(X, 20, sx - 52.25).project(a.camera); return [((v.x + 1) / 2) * innerWidth, ((1 - v.y) / 2) * innerHeight]; };
+    const p = at(0), q = at(85);
+    m.tap(p[0] - 3, p[1], 'mouse'); m.tap(q[0] + 3, q[1], 'mouse');
+    return m.items.map((i) => i.el.textContent); }, X);
+};
+await ev(() => window.__viewer.app.setView('end', true));
+const mEnd = await measureAcross(300);
+await ev(() => { const a = window.__viewer.app; a.setClip('x', 150); a.setView('end', true); });
+const mCap = await measureAcross(150);
+const mOn = await ev(() => ({ on: window.__viewer.modules.measure.on, bar: !document.getElementById('measureBar').hidden, line: window.__viewer.modules.measure.line.visible, info: { ...window.__viewer.lastInfo } }));
+check('ölçüm: kasa genişliği 85,0 mm (uç yüz ve kesit yüzü, s.9)', mEnd[0] === '85,0 mm' && mCap[0] === '85,0 mm' && mOn.on && mOn.bar && mOn.line, JSON.stringify({ mEnd, mCap }));
+await shot(page, '10b_olcum', 800);
+await page.keyboard.press('m');
+await page.waitForTimeout(500);
+const mOff = await ev(() => ({ on: window.__viewer.modules.measure.on, labels: document.querySelectorAll('#measureLayer .ms-label').length }));
+check('ölçüm: M ile kapanır, etiketler temizlenir', !mOff.on && mOff.labels === 0, JSON.stringify(mOff));
+// ısı haritası + kesit + ölçüm birlikte: bütçe
+await ev(() => { const v = window.__viewer; v.lastInfo.maxTris = 0; v.lastInfo.maxCalls = 0; v.modules.thermal.setOn(true, { view: false }); v.modules.measure.setOn(true); });
+await page.waitForFunction(() => window.__viewer.modules.thermal.k > 0.99, null, { timeout: 30000 }).catch(() => {});
+await measureAcross(150);
+await page.waitForTimeout(1500);
+const bTh = await ev(() => ({ ...window.__viewer.lastInfo }));
+check('bütçe: ısı haritası + kesit + ölçüm < 150K üçgen, < 50 çağrı', bTh.maxTris < 150000 && bTh.maxCalls < 50, `${bTh.maxTris} üçgen, ${bTh.maxCalls} çağrı`);
+await shot(page, '10c_isi_kesit_olcum', 800);
+await ev(() => window.__viewer.app.resetAll());
+await page.waitForTimeout(1500);
 
 // tüm tur bölümleri: her bölümün en yoğun karesi bütçe içinde (x-ray bölümleri dahil)
 const perCh = [];

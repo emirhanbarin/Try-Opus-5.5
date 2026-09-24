@@ -8,6 +8,7 @@
 //    dört renk seti: renk perdesinin solu/sağı × dış/iç yüz (iki renkli folyo)
 //  - Röntgen merceği (SUP_LENS): ekrandaki dairenin içinde PVC çizilmez
 //  - Üretim hikâyesi: gönye yüzü ısınması (uHeat) ve kesit yüzü renk katmanı (uCapTint)
+//  - Isı haritası (uThermal): kesit yüzleri ve kolların serbest uç yüzleri 2B sıcaklık dokusuyla boyanır, diğerleri sönük
 import * as THREE from '../vendor/three-bundle.min.js';
 
 export const shared = {
@@ -25,6 +26,9 @@ export const shared = {
   uLens: { value: new THREE.Vector4(0, 0, 0, 0) },        // röntgen merceği: xy merkez (gl_FragCoord), z yarıçap, w açık
   uHeat: { value: 0 },                                    // kaynak: gönye yüzü ısınması (0..1)
   uCapTint: { value: new THREE.Vector4(1, 0.5, 0.15, 0) }, // kesit yüzüne renk katmanı (rgb, miktar): ekstrüzyon parıltısı
+  uThermal: { value: 0 },                                 // ısı haritası geçişi (0..1)
+  uTemp: { value: null },                                 // sıcaklık dokusu (R = T / 20 °C), kesit koordinatı (sx, sy) mm
+  uTempBox: { value: new THREE.Vector4(0, 0, 1, 1) },     // uv = ((sx, sy) - xy) / zw
   uWood: { value: null },
 };
 
@@ -54,6 +58,29 @@ float supVN3(vec3 p){
              mix(mix(supH(n + 113.0), supH(n + 114.0), f.x), mix(supH(n + 170.0), supH(n + 171.0), f.x), f.y), f.z);
 }`;
 
+// Isı haritası renk rampası (t = T / 20 °C: 0 dış, 1 iç) ve eş sıcaklık çizgileri; chambers.js ve açıklama
+// (kose.css .tl-bar) aynı durakları kullanır. Çıkış doğrudan ekran rengidir (ton eşleme yok).
+export const THERMAL_GLSL = `
+vec3 thermalRamp(float t) {
+  t = clamp(t, 0.0, 1.0);
+  vec3 a = vec3(0.08, 0.05, 0.35), b = vec3(0.1, 0.45, 0.95), c = vec3(0.1, 0.8, 0.75), d = vec3(0.98, 0.85, 0.2), e = vec3(0.95, 0.25, 0.12);
+  if (t < 0.25) return mix(a, b, t / 0.25);
+  if (t < 0.5) return mix(b, c, (t - 0.25) / 0.25);
+  if (t < 0.75) return mix(c, d, (t - 0.5) / 0.25);
+  return mix(d, e, (t - 0.75) / 0.25);
+}
+// 2 °C'de bir ince (koyu), 10 °C'de kalın (beyaz) çizgi; kalınlık ekranda sabit. Süreksiz kenarlarda (fwidth büyük)
+// çizgi taşmasın diye türev sınırlanır.
+vec3 thermalShade(float t) {
+  vec3 col = thermalRamp(t);
+  float q = t * 10.0;
+  float fq = clamp(fwidth(q), 1e-5, 0.25);
+  float thin = 1.0 - smoothstep(0.55, 1.3, abs(fract(q + 0.5) - 0.5) / fq);
+  float bold = 1.0 - smoothstep(1.1, 2.1, abs(q - 5.0) / fq);
+  col = mix(col, col * 0.45, thin * 0.75);
+  return mix(col, vec3(1.0), bold * 0.92);
+}`;
+
 function patch(material, key, opts = {}) {
   const cap = CAP[key] || CAP.pvc;
   material.userData.u = {
@@ -64,6 +91,7 @@ function patch(material, key, opts = {}) {
     uHatch: { value: new THREE.Vector2(cap.s, cap.a) },
     uSeamK: { value: opts.seam || 0 },
     uODeq: { value: new THREE.Vector4(0, 0, 0, 1) },       // GLB nicemleme: nesne uzayı -> metre (xyz öteleme, w ölçek)
+    uThK: { value: opts.thermal ? 1 : 0 },                 // ısı haritasında boyanır mı (ısıcam bileşenleri hesapta yok)
   };
   const defs = {};
   if (opts.foil) defs.SUP_FOIL = '';
@@ -107,6 +135,8 @@ uniform float uHi; uniform vec3 uHiColor; uniform vec3 uCapColor; uniform vec3 u
 uniform float uMicro; uniform float uSeam; uniform float uSeamK;
 uniform vec4 uFin[4]; uniform vec3 uFinA[4]; uniform vec3 uFinB[4]; uniform vec2 uSplit;
 uniform float uHeat; uniform vec4 uCapTint;
+uniform float uThermal; uniform sampler2D uTemp; uniform vec4 uTempBox; uniform float uThK;
+${THERMAL_GLSL}
 #ifdef SUP_LENS
 uniform vec4 uLens;
 #endif
@@ -241,12 +271,31 @@ float capHatch(vec3 wp){
       totalEmissiveRadiance += vec3(1.0, 0.34, 0.06) * supHeatGlow * 2.2;
 #endif`);
     fs = fs.replace('#include <dithering_fragment>', `#include <dithering_fragment>
+  // ısı haritası: kesit yüzünde görünen arka yüzün değil, bakış ışınının kesit düzlemini deldiği noktanın kesit
+  // koordinatı kullanılır. 2B alan kol ekseni boyunca uzatılır: alt kolda (sx, sy) = (Z + 52,25, Y), yan kolda (…, X).
+  // Doku örneği ve türevler yalnızca tekdüze (uniform) dalda alınır.
+  float supThOn = 0.0; vec3 supThCol = vec3(0.0);
+  if ( uThermal > 0.001 ) {
+    vec3 rd = vWPos - cameraPosition;
+    float den = dot( uClip.xyz, rd );
+    float tt = abs( den ) > 1e-9 ? -( dot( uClip.xyz, cameraPosition ) + uClip.w ) / den : 1.0;
+    vec3 po = gl_FrontFacing ? vOPos : vOPos + rd * ( tt - 1.0 );
+    vec2 sxy = vec2( po.z * 1000.0 + 52.25, ( po.x >= po.y ? po.y : po.x ) * 1000.0 );
+    supThCol = thermalShade( texture2D( uTemp, ( sxy - uTempBox.xy ) / uTempBox.zw ).r );
+    bool endFace = ( abs( supN0.x ) > 0.92 && vOPos.x > 0.2985 ) || ( abs( supN0.y ) > 0.92 && vOPos.y > 0.2985 );
+    supThOn = uThK > 0.5 && ( gl_FrontFacing ? endFace : uClipOn > 0.5 ) ? 1.0 : 0.0;
+  }
   if ( !gl_FrontFacing ) {
     vec3 cc = mix( uCapColor, uCapHatch, capHatch( vWPos ) );
     cc = mix( cc, vec3( 1.0, 0.42, 0.1 ), supHeatGlow );
     cc = mix( cc, uCapTint.rgb, uCapTint.a );
+    if ( uThermal > 0.001 ) cc = supThOn > 0.5 ? mix( cc, supThCol, uThermal ) : mix( cc, vec3( dot( cc, vec3( 0.2126, 0.7152, 0.0722 ) ) * 0.3 + 0.02 ), uThermal * 0.85 );
     cc = mix( cc, uHiColor, uHi * 0.35 );
     gl_FragColor = vec4( cc, 1.0 );
+  } else if ( uThermal > 0.001 ) {
+    vec3 dim = vec3( dot( gl_FragColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) ) * 0.32 + 0.02 );
+    gl_FragColor.rgb = supThOn > 0.5 ? mix( gl_FragColor.rgb, supThCol, uThermal ) : mix( gl_FragColor.rgb, dim, uThermal * 0.85 );
+    gl_FragColor.rgb = mix( gl_FragColor.rgb, uHiColor, uHi * 0.3 );
   } else if ( uHi > 0.0 ) {
     vec3 vdir = normalize( vViewPosition );
     float fr = pow( 1.0 - clamp( abs( dot( normalize( normal ), vdir ) ), 0.0, 1.0 ), 2.2 );
@@ -267,7 +316,7 @@ function patchGlass(material) {
       .replace('#include <common>', '#include <common>\nvarying vec3 vWNrmG;')
       .replace('#include <fog_vertex>', '#include <fog_vertex>\nvWNrmG = normalize(mat3(modelMatrix) * objectNormal);');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vWNrmG;\nuniform float uHi; uniform vec3 uHiColor;')
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWNrmG;\nuniform float uHi; uniform vec3 uHiColor; uniform float uThermal;')
       .replace('#include <dithering_fragment>', `#include <dithering_fragment>
   // Low-E kaplama: eğik bakışta hafif yeşil-mavi yansıma tonu
   float fres = pow( 1.0 - abs( dot( normalize( vNormal ), normalize( vViewPosition ) ) ), 3.0 );
@@ -276,6 +325,7 @@ function patchGlass(material) {
   float edge = 1.0 - abs( vWNrmG.z );
   gl_FragColor.rgb = mix( gl_FragColor.rgb, vec3( 0.36, 0.55, 0.48 ), edge * 0.75 );
   gl_FragColor.a = mix( gl_FragColor.a, 0.9, edge );
+  gl_FragColor.rgb = mix( gl_FragColor.rgb, vec3( dot( gl_FragColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) ) * 0.35 ), uThermal * 0.85 );   // ısı haritasında sönük
   gl_FragColor.rgb = mix( gl_FragColor.rgb, uHiColor, uHi * 0.35 );
   gl_FragColor.a = max( gl_FragColor.a, uHi * 0.35 );`);
   };
@@ -292,10 +342,10 @@ export function createMaterial(key, tex, def = {}, tier = 'high') {
     case 'cover':
       m = new THREE.MeshPhysicalMaterial({ ...common, color: 0xf3f3f0, roughness: 0.34, metalness: 0,
         clearcoat: 0.35, clearcoatRoughness: 0.28, specularIntensity: 0.6 });
-      return patch(m, key, { foil: !!def.foil, seam: def.seam || 0, die: key === 'pvc', lens: true });
+      return patch(m, key, { foil: !!def.foil, seam: def.seam || 0, die: key === 'pvc', lens: true, thermal: true });
     case 'steel':
       m = new THREE.MeshStandardMaterial({ ...common, color: 0xc2c7cc, roughness: 0.36, metalness: 1.0 });
-      return patch(m, key, { triplanarMap: tex.spangle });
+      return patch(m, key, { triplanarMap: tex.spangle, thermal: true });
     case 'epdm':
     case 'tpe':
       if (tier === 'high') {
@@ -304,7 +354,7 @@ export function createMaterial(key, tex, def = {}, tier = 'high') {
       } else {
         m = new THREE.MeshStandardMaterial({ ...common, color: key === 'epdm' ? 0x171717 : 0x1b1b1b, roughness: key === 'epdm' ? 0.74 : 0.58, metalness: 0 });
       }
-      return patch(m, key, { grain: true });
+      return patch(m, key, { grain: true, thermal: true });
     case 'alu':
       m = new THREE.MeshStandardMaterial({ ...common, color: 0xbfc4ca, roughness: 0.42, metalness: 1.0 });
       return patch(m, key);
@@ -316,10 +366,10 @@ export function createMaterial(key, tex, def = {}, tier = 'high') {
       return patch(m, key);
     case 'plastic':
       m = new THREE.MeshStandardMaterial({ ...common, color: 0x4b6f98, roughness: 0.46, metalness: 0 });
-      return patch(m, key);
+      return patch(m, key, { thermal: true });
     case 'screw':
       m = new THREE.MeshStandardMaterial({ ...common, color: 0xd9dde2, roughness: 0.24, metalness: 1.0 });
-      return patch(m, key);
+      return patch(m, key, { thermal: true });
     case 'glass':
       m = new THREE.MeshPhysicalMaterial({ color: 0xeef6f3, roughness: 0.03, metalness: 0, transparent: true, opacity: 0.14,
         side: THREE.DoubleSide, depthWrite: false, specularIntensity: 1.0, ior: 1.52, envMapIntensity: 1.4 });

@@ -8,6 +8,7 @@ files = {
     'assets/kose/ao_kose.ktx2': 'application/octet-stream',
     'assets/kose/studio2.ktx2': 'application/octet-stream',
     'assets/kose/ahsap.ktx2': 'application/octet-stream',
+    'assets/kose/isi.ktx2': 'application/octet-stream',
     'assets/spangle.ktx2': 'application/octet-stream',
     'vendor/basis/basis_transcoder.js': 'text/javascript',
     'vendor/basis/basis_transcoder.wasm': 'application/wasm',

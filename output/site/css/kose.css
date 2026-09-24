@@ -282,3 +282,65 @@ body.attract .chamber-count #chamberClose { display: none; }
 .story-tag { position: fixed; left: 0; top: 0; z-index: 6; padding: 6px 13px; border-radius: 999px; font-weight: 750; font-size: 15px; color: #fff;
   background: linear-gradient(90deg, #ff6a1a, #ffb03a); box-shadow: 0 0 26px rgba(255, 120, 40, .6); pointer-events: none; }
 .tour-card.single .tc-dots, .tour-card.single .tc-count { visibility: hidden; }
+
+/* ---------- ısı haritası açıklaması (renk durakları materials.js THERMAL_GLSL ile aynı) ---------- */
+.therm-legend { position: fixed; left: 50%; top: 84px; transform: translateX(-50%); z-index: 8; width: min(600px, calc(100vw - 32px));
+  padding: 12px 14px 12px 18px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line2); box-shadow: var(--shadow);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.tl-top { display: flex; align-items: center; gap: 14px; }
+.tl-title { font-size: 15px; font-weight: 700; }
+.tl-cond { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); margin-right: auto; }
+.tl-cond i { width: 10px; height: 10px; border-radius: 3px; margin-left: 8px; }
+.tl-cond i.out { background: rgb(20, 13, 89); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35); }
+.tl-cond i.in { background: rgb(242, 64, 31); }
+.tl-bar { position: relative; height: 14px; margin: 10px 0 4px; border-radius: 4px;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(0, 0, 0, .45) calc(10% - 1px) 10%),
+    linear-gradient(90deg, rgb(20, 13, 89) 0%, rgb(26, 115, 242) 25%, rgb(26, 204, 191) 50%, rgb(250, 217, 51) 75%, rgb(242, 64, 31) 100%); }
+.tl-10 { position: absolute; left: calc(50% - 1.5px); top: -3px; bottom: -3px; width: 3px; border-radius: 2px; background: #fff; box-shadow: 0 0 6px rgba(0, 0, 0, .6); }
+.tl-ticks { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tl-key { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 7px; font-size: 12px; color: var(--muted); }
+.tl-key i { display: inline-block; width: 18px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+.tl-key i.bold { height: 3px; background: #fff; }
+.tl-key i.thin { height: 1px; background: rgba(255, 255, 255, .55); }
+.tl-uf { margin-top: 8px; font-size: 13px; font-weight: 650; color: var(--accent); }
+.tl-uf:empty { display: none; }
+.tl-note { margin: 4px 0 0; font-size: 11.5px; line-height: 1.4; color: var(--faint); }
+body.kiosk .therm-legend { width: min(680px, calc(100vw - 32px)); padding: 14px 16px 14px 22px; }
+body.kiosk .tl-title { font-size: 17px; }
+body.kiosk .tl-ticks, body.kiosk .tl-key { font-size: 13px; }
+body.attract #thermClose { display: none; }
+@media (max-width: 820px) { .therm-legend { top: 120px; } .tl-key { display: none; } }
+
+/* ---------- canlı 2B kesit penceresi ---------- */
+.sec-inset { position: fixed; left: 16px; bottom: 16px; z-index: 7; width: 252px; padding: 10px 11px 9px; border-radius: 14px;
+  background: var(--panel); border: 1px solid var(--line2); box-shadow: var(--shadow); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); pointer-events: none; }
+.si-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px; font-size: 12.5px; }
+.si-head b { font-weight: 700; }
+.si-head span { color: var(--accent); font-weight: 650; font-variant-numeric: tabular-nums; }
+#siCanvas { display: block; width: 100%; border-radius: 8px; background: rgba(0, 0, 0, .28); }
+.si-tags { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.si-tags span { padding: 4px 7px; border-radius: 7px; font-size: 11.5px; line-height: 1.3; font-weight: 600; color: #ffd48a; background: rgba(255, 176, 58, .12); border: 1px solid rgba(255, 176, 58, .3); }
+.si-foot { margin-top: 5px; font-size: 10.5px; color: var(--faint); }
+.inset-tgl { margin-top: 10px; }
+body.kiosk .sec-inset { width: 290px; }
+body.kiosk .si-head { font-size: 14px; }
+@media (max-width: 820px) { .sec-inset { display: none; } }
+
+/* ---------- ölçüm ---------- */
+.measure-bar { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 8; display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px 10px 18px; border-radius: 14px; background: var(--panel); border: 1px solid rgba(255, 176, 58, .45); box-shadow: var(--shadow);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); max-width: calc(100vw - 32px); }
+.mb-text { display: flex; flex-direction: column; gap: 1px; margin-right: 6px; font-size: 13px; }
+.mb-text b { color: #ffb03a; font-size: 13.5px; }
+.mb-text small { font-size: 11px; color: var(--faint); }
+#measureLayer { position: fixed; inset: 0; z-index: 4; pointer-events: none; }
+.ms-label { position: fixed; left: 0; top: 0; padding: 4px 9px; border-radius: 8px; font-size: 13px; font-weight: 750; font-variant-numeric: tabular-nums; white-space: nowrap;
+  color: #1d1300; background: #ffb03a; box-shadow: 0 4px 14px rgba(0, 0, 0, .45); }
+.ms-dot { position: fixed; left: 0; top: 0; width: 9px; height: 9px; border-radius: 50%; background: #ffb03a; border: 2px solid #1d1300; }
+.ms-snap { position: fixed; left: 0; top: 0; z-index: 5; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #ffb03a; pointer-events: none; }
+.ms-snap[data-kind="köşe"] { background: rgba(255, 176, 58, .45); }
+.ms-snap[data-kind="kenar"] { border-radius: 3px; transform-origin: center; }
+.ms-snap[data-kind="yüzey"], .ms-snap[data-kind="kesit"] { width: 10px; height: 10px; border-width: 1.5px; }
+body.measuring #scene { cursor: crosshair; }
+body.kiosk .measure-bar { bottom: 120px; }
+body.kiosk .ms-label { font-size: 16px; padding: 6px 12px; }

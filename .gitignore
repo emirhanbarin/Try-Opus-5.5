@@ -6,3 +6,4 @@ __pycache__/
 node_modules/
 output/source/env/*.npy
 output/source/bake/*.exr
+output/source/bake/*.raw

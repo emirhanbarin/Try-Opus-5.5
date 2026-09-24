@@ -282,4 +282,5 @@ export const ASSUMPTIONS = [
   'Kaynak dikişi ve renk seçenekleri görsel amaçlıdır.',
   'Kasa takviyesi iki uçta eşit geri çekilmiştir (A − 153 → 76,5 mm); s.10 çiziminde uçtan 68 mm ölçüsü de vardır.',
   'Vida baş ölçüleri standart değerlerdir (DIN 7504; kasa silindir, kanat havşa baş); döküman baş ölçüsü vermez.',
+  'Isı haritası gösterim amaçlıdır: EN ISO 10077-2 yöntemiyle 2B hesap, standart tablo iletkenlikleri (PVC 0,17 · EPDM 0,25 · çelik 50 W/(m·K)); ısıcam 0,035 W/(m·K) yalıtım paneliyle temsil edilir; kesit sonucu iki kola uygulanır, köşedeki 3B etki gösterilmez. Resmi değer ift belgesindeki Uf = 1,0 W/(m²K)\'dir.',
 ];

@@ -12,6 +12,9 @@ import { DrawingOverlay } from './drawing.js';
 import { Lens } from './lens.js';
 import { Chambers } from './chambers.js';
 import { Story } from './story.js';
+import { Thermal } from './thermal.js';
+import { SectionInset } from './section-inset.js';
+import { Measure } from './measure.js';
 
 const { OrbitControls, GLTFLoader, KTX2Loader, MeshoptDecoder, computeBoundsTree, disposeBoundsTree, acceleratedRaycast } = THREE;
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -103,7 +106,7 @@ function progress(key, loaded, total) {
   $('progressBar').style.width = pct + '%';
   $('loaderPct').textContent = pct + '%';
 }
-const EXPECTED = { model: 682916, ao: 860590, env: 523995, spangle: 195010, wood: 180748, basis: 584862 };
+const EXPECTED = { model: 682916, ao: 860590, env: 523995, spangle: 195010, wood: 180748, heat: 74272, basis: 584862 };
 for (const k in EXPECTED) progress(k, 0, EXPECTED[k]);
 
 function fatal(msg) {
@@ -144,12 +147,13 @@ async function boot() {
   await setupFileProtocol();
   loader.text.textContent = 'Model ve dokular yükleniyor…';
   manager.onProgress = (url) => { if (/basis_transcoder/.test(url)) progress('basis', EXPECTED.basis, EXPECTED.basis); };
-  const [gltf, aoTex, envTex, spangleTex, woodTex] = await Promise.all([
+  const [gltf, aoTex, envTex, spangleTex, woodTex, heatTex] = await Promise.all([
     new Promise((res, rej) => gltfLoader.load('assets/kose/supremo85_kose.glb', res, (e) => progress('model', e.loaded, e.total), rej)),
     loadKTX('assets/kose/ao_kose.ktx2', 'ao'),
     loadKTX('assets/kose/studio2.ktx2', 'env'),
     loadKTX('assets/spangle.ktx2', 'spangle'),
     loadKTX('assets/kose/ahsap.ktx2', 'wood'),
+    loadKTX('assets/kose/isi.ktx2', 'heat'),
   ]);
   progress('basis', EXPECTED.basis, EXPECTED.basis);
   loader.text.textContent = 'Stüdyo aydınlatması hazırlanıyor…';
@@ -171,6 +175,10 @@ async function boot() {
   woodTex.colorSpace = THREE.NoColorSpace; woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
   woodTex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
   shared.uWood.value = woodTex;
+  // ısı haritası: R16 yarım kayan nokta (535 px satır, 4 bayta hizalı değil), doğrusal süzme, kenarda kenetlenir
+  heatTex.colorSpace = THREE.NoColorSpace; heatTex.unpackAlignment = 1; heatTex.generateMipmaps = false;
+  heatTex.minFilter = heatTex.magFilter = THREE.LinearFilter; heatTex.wrapS = heatTex.wrapT = THREE.ClampToEdgeWrapping;
+  heatTex.needsUpdate = true;
   shared.uMicro.value = tier === 'high' ? 1 : 0;
 
   loader.text.textContent = 'Parçalar oluşturuluyor…';
@@ -186,6 +194,9 @@ async function boot() {
   modules.water = new Water(app);
   modules.lens = new Lens(app);
   modules.chambers = new Chambers(app);
+  modules.thermal = new Thermal(app, heatTex);
+  modules.inset = new SectionInset(app);
+  modules.measure = new Measure(app);
   modules.story = new Story(app);
   modules.tour = new Tour(app);
   modules.kiosk = new Kiosk(app, KIOSK);
@@ -451,12 +462,13 @@ canvas.addEventListener('pointerdown', (e) => { pointer.down = { x: e.clientX, y
 canvas.addEventListener('pointerup', (e) => {
   const swallowed = !!modules.kiosk?.swallowTap();   // tanıtımı bitiren dokunuş seçim sayılmaz
   if (pointer.down && !pointer.moved && e.button === 0 && !swallowed) {
-    const id = pick(e.clientX, e.clientY);
-    select(id);
+    if (modules.measure?.on) modules.measure.tap(e.clientX, e.clientY, e.pointerType);   // ölçüm modunda dokunuş nokta koyar
+    else select(pick(e.clientX, e.clientY));
   }
   pointer.down = null;
 });
 canvas.addEventListener('dblclick', (e) => {
+  if (modules.measure?.on) return;
   const id = pick(e.clientX, e.clientY);
   if (id) select(id, { focus: true }); else setView('hero');
 });
@@ -479,6 +491,7 @@ function processHover() {
   if (!pointer.pending) return;
   pointer.pending = false;
   if (pointer.down) return;
+  if (modules.measure?.on) { setHover(null); modules.measure.move(pointer.x, pointer.y); return; }
   const id = pick(pointer.x, pointer.y);
   setHover(id);
   const tip = $('tooltip');
@@ -624,7 +637,7 @@ function markLayout() { layoutDirty = true; }
 function watchLayout() {
   const mo = new MutationObserver(markLayout);
   const ro = new ResizeObserver(markLayout);
-  for (const id of ['partsPanel', 'infoPanel', 'hotCard', 'sectionPop', 'tourCard', 'dock']) {
+  for (const id of ['partsPanel', 'infoPanel', 'hotCard', 'sectionPop', 'tourCard', 'dock', 'thermLegend', 'secInset', 'measureBar']) {
     const el = $(id); if (!el) continue;
     mo.observe(el, { attributes: true, attributeFilter: ['hidden', 'class'] });
     ro.observe(el);
@@ -641,14 +654,19 @@ function measureFreeArea() {
   const W = window.innerWidth, H = window.innerHeight;
   const narrow = W < 820;
   const rectW = (id) => { const el = $(id); if (!el || el.hidden || el.classList.contains('collapsed')) return 0; const r = el.getBoundingClientRect(); return r.width > 0 ? r.right + 16 : 0; };
-  const left = narrow ? 0 : rectW('partsPanel');
+  let left = narrow ? 0 : rectW('partsPanel');
+  if (!narrow && modules.inset?.visible) left = Math.max(left, rectW('secInset'));   // canlı kesit penceresi (sol alt)
   const rightEl = ['infoPanel', 'hotCard', 'sectionPop'].map($).find((el) => el && !el.hidden) || null;
   const right = narrow || !rightEl ? 0 : W - rightEl.getBoundingClientRect().left + 16;
   const topEl = document.querySelector('.topbar');
-  const top = topEl ? topEl.getBoundingClientRect().bottom + 8 : 84;
+  let top = topEl ? topEl.getBoundingClientRect().bottom + 8 : 84;
+  const leg = $('thermLegend');                       // ısı haritası açıklaması üst ortada
+  if (leg && !leg.hidden) top = Math.max(top, leg.getBoundingClientRect().bottom + 8);
   let bottom = H - $('dock').getBoundingClientRect().top + 12;
-  const cap = $('tourCard');
-  if (cap && !cap.hidden) bottom = Math.max(bottom, H - cap.getBoundingClientRect().top + 12);
+  for (const id of ['tourCard', 'measureBar']) {
+    const el = $(id);
+    if (el && !el.hidden) bottom = Math.max(bottom, H - el.getBoundingClientRect().top + 12);
+  }
   return { x0: left, x1: W - right, y0: top, y1: H - bottom, W, H };
 }
 function fitDistance(r, fovDeg = camera.fov) {
@@ -952,6 +970,8 @@ function buildUI() {
   $('tStory').onclick = () => { closePopovers(); modules.tour.start({ only: 'uretim' }); userActive(); };
   $('tLens').onclick = () => { const on = !modules.lens.on; modules.lens.setOn(on); $('tLens').setAttribute('aria-pressed', String(on)); if (on) closePopovers(); userActive(); };
   $('tChambers').onclick = () => { closePopovers(); runChambers(); userActive(); };
+  $('tThermal').onclick = () => { modules.tour?.stop(false); closePopovers(); modules.thermal.toggle(); userActive(); };
+  $('tMeasure').onclick = () => { modules.tour?.stop(false); closePopovers(); modules.measure.toggle(); userActive(); };
   $('chamberClose').onclick = () => modules.chambers.stop();
   $('btnFinish').onclick = () => { const pop = $('finishPop'); const o = pop.hidden; closePopovers(); pop.hidden = !o; $('btnFinish').setAttribute('aria-pressed', String(o)); };
 
@@ -1041,6 +1061,7 @@ function closePopovers() {
 // kamara sayacı: uç kesit görünümü, 360° bekler
 function runChambers() {
   modules.tour?.stop(false);
+  modules.thermal?.setOn(false, { view: false });
   if (state.clip.on) { state.clip.on = false; updateClip(); }
   setExplodeTarget(0, true); setView('dims'); setTurntable(false);
   modules.chambers.run();
@@ -1051,6 +1072,8 @@ function resetAll() {
   modules.tour?.stop(false);
   modules.story?.stop();
   modules.water?.stop();
+  modules.thermal?.setOn(false, { view: false });
+  modules.measure?.setOn(false);
   modules.chambers?.stop();
   if (modules.lens?.on) { modules.lens.setOn(false); $('tLens').setAttribute('aria-pressed', 'false'); }
   if (state.compare.on) setCompare(false);
@@ -1089,6 +1112,8 @@ function onKey(e) {
   else if (c === 'KeyO') $('btnTurn').click();
   else if (c === 'KeyX') $('tLens').click();
   else if (c === 'KeyK') runChambers();
+  else if (c === 'KeyS') $('tThermal').click();
+  else if (c === 'KeyM') $('tMeasure').click();
   else if (c === 'KeyU') modules.tour.start({ only: 'uretim' });
   else if (c === 'KeyR') resetAll();
   else if (e.key === '?') $('helpModal').hidden = false;
@@ -1208,7 +1233,7 @@ const app = {
   THREE, scene, camera, controls, renderer, model, parts, state, turn, MM, MODEL_OFFSET, KIOSK,
   $, toWorld, setView, viewPose, animateCamera, setExplodeTarget, setClip, updateClip, select, setGhost, refreshVisibility,
   setTurntable, setFinish, setDims, setDrawing, setHotspots, resetAll, focusPart, closePopovers, fitDistance, userActive,
-  restoreQuality, markLayout: () => markLayout(), applyExplode, addClipMaterial, ghostMat, setCompare, runChambers,
+  restoreQuality, markLayout: () => markLayout(), applyExplode, addClipMaterial, ghostMat, setCompare, runChambers, clipPlane,
   modules, onFrame: (fn) => frameHooks.push(fn), requestRender: (n = 2) => { state.needsRender = Math.max(state.needsRender, n); },
   get tier() { return tier; },
 };

@@ -1,0 +1,35 @@
+{
+ "grid_mm": 0.1,
+ "cells": [
+  1070,
+  1410
+ ],
+ "cavities": 62,
+ "q_in": 2.8467318542889726,
+ "q_out": 2.846731854789375,
+ "energy_balance_pct": 1.75781356238519e-08,
+ "q_in_0_2mm": 2.842488071877221,
+ "grid_change_pct": 0.14907559366217774,
+ "uf_check": {
+  "L2D": 0.3027779222273187,
+  "Up": 0.922266139657444,
+  "Uf": 1.0286077071968092,
+  "official_Uf": 1.0,
+  "note": "yaln\u0131zca i\u00e7 denetim; aray\u00fczde g\u00f6sterilmez"
+ },
+ "min_interior_surface_C": 16.51685866922739,
+ "texture": {
+  "file": "assets/kose/isi.ktx2",
+  "box_mm": [
+   -1.0,
+   -1.0,
+   107.0,
+   141.0
+  ],
+  "px_mm": 0.2,
+  "size": [
+   535,
+   705
+  ]
+ }
+}

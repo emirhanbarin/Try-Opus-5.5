@@ -1,5 +1,5 @@
 // Keşif turu: veri güdümlü bölümler (kamera, patlatma, kesit, hayalet görünüm, izolasyon, işaretler, su, renk,
-// üretim hikâyesi, röntgen merceği, kamara sayacı). Normal kullanımda ileri/geri/duraklat; kiosk tanıtım modunda
+// üretim hikâyesi, röntgen merceği, kamara sayacı, ısı haritası). Normal kullanımda ileri/geri/duraklat; kiosk tanıtım modunda
 // döngüde oynar; start({ only }) tek bir bölümü oynatıp biter (Araçlar'dan üretim hikâyesi).
 import { TOUR } from './tour-data.js';
 
@@ -22,6 +22,7 @@ export class Tour {
     $('tcPause').onclick = () => { this.pause(); app.userActive(); };
     $('tcClose').onclick = () => this.stop();
     this.active = false; this.paused = false; this.i = 0; this.t = 0; this.loop = false; this.attract = false;
+    this.ids = TOUR.map((c) => c.id);
     this.finishTimer = 0;
     app.onFrame((now, dt) => this.step(dt));
     // turda sahneye dokunmak turu duraklatır (kiosk tanıtımında kiosk modülü yönetir)
@@ -47,7 +48,7 @@ export class Tour {
   }
   cleanup() {
     const app = this.app, m = app.modules;
-    m.story?.stop(); m.chambers?.stop();
+    m.story?.stop(); m.thermal?.setOn(false, { view: false }); m.measure?.setOn(false); m.chambers?.stop();
     if (m.lens?.on) { m.lens.setOn(false); app.$('tLens')?.setAttribute('aria-pressed', 'false'); }
     m.water.stop(); m.hotspots.setVisible(false); m.hotspots.setCallouts(false);
     app.setGhost(null);
@@ -78,6 +79,7 @@ export class Tour {
     app.animateCamera(pose.pos, pose.target, 1500, pose.fov);
     if (ch.lens) m.lens.setOn(true, { auto: true });
     if (ch.chambers) m.chambers.run();
+    if (ch.thermal) m.thermal.setOn(true, { view: false });
     if (ch.story) m.story.start({ caption: (t, x) => this.setCaption(t, x) });
     // kart
     this.el.count.textContent = `${this.i + 1} / ${TOUR.length}`;
