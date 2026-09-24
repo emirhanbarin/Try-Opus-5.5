@@ -1,0 +1,6 @@
+# Kullanıcının girdi dökümanı depoya eklenmez (yerelde saklanır)
+output/source/reference/*.pdf
+__pycache__/
+*.blend1
+*.pyc
+node_modules/

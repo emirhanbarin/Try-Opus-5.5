@@ -1,0 +1,373 @@
+[
+ {
+  "a": "cam_1",
+  "b": "cam_takoz_koprusu",
+  "tri_overlaps": 25,
+  "min_dist_mm": 0.0,
+  "inter_volume_mm3": 0.0
+ },
+ {
+  "a": "cam_1",
+  "b": "ikincil_sizdirmazlik",
+  "tri_overlaps": 18,
+  "min_dist_mm": 0.0001,
+  "inter_volume_mm3": 0.1428
+ },
+ {
+  "a": "cam_1",
+  "b": "isicam_citasi",
+  "tri_overlaps": 12,
+  "min_dist_mm": 0.0135,
+  "inter_volume_mm3": 0.1563
+ },
+ {
+  "a": "cam_1",
+  "b": "kanat_dis_cam_contasi",
+  "tri_overlaps": 16,
+  "min_dist_mm": 0.0136,
+  "inter_volume_mm3": 0.1814
+ },
+ {
+  "a": "cam_1",
+  "b": "kanat_profili",
+  "tri_overlaps": 0,
+  "min_dist_mm": null,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "cam_1",
+  "b": "nem_alici",
+  "tri_overlaps": 0,
+  "min_dist_mm": 1.0,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "cam_2",
+  "b": "cam_takoz_koprusu",
+  "tri_overlaps": 25,
+  "min_dist_mm": 0.0,
+  "inter_volume_mm3": 0.0
+ },
+ {
+  "a": "cam_2",
+  "b": "ikincil_sizdirmazlik",
+  "tri_overlaps": 0,
+  "min_dist_mm": 0.0001,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "cam_2",
+  "b": "isicam_citasi",
+  "tri_overlaps": 0,
+  "min_dist_mm": 0.0139,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "cam_2",
+  "b": "kanat_profili",
+  "tri_overlaps": 0,
+  "min_dist_mm": null,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "cam_2",
+  "b": "nem_alici",
+  "tri_overlaps": 0,
+  "min_dist_mm": 1.0004,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "cam_3",
+  "b": "cam_citasi_contasi",
+  "tri_overlaps": 28,
+  "min_dist_mm": 0.0115,
+  "inter_volume_mm3": 0.1365
+ },
+ {
+  "a": "cam_3",
+  "b": "cam_takoz_koprusu",
+  "tri_overlaps": 24,
+  "min_dist_mm": 0.0,
+  "inter_volume_mm3": 0.0
+ },
+ {
+  "a": "cam_3",
+  "b": "ikincil_sizdirmazlik",
+  "tri_overlaps": 17,
+  "min_dist_mm": 0.0005,
+  "inter_volume_mm3": 0.7165
+ },
+ {
+  "a": "cam_3",
+  "b": "isicam_citasi",
+  "tri_overlaps": 16,
+  "min_dist_mm": 0.0134,
+  "inter_volume_mm3": 0.4862
+ },
+ {
+  "a": "cam_3",
+  "b": "kanat_profili",
+  "tri_overlaps": 0,
+  "min_dist_mm": null,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "cam_3",
+  "b": "nem_alici",
+  "tri_overlaps": 0,
+  "min_dist_mm": 0.9997,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "cam_citasi",
+  "b": "cam_citasi_contasi",
+  "tri_overlaps": 103,
+  "min_dist_mm": 0.0002,
+  "inter_volume_mm3": 0.023
+ },
+ {
+  "a": "cam_citasi",
+  "b": "cam_takoz_koprusu",
+  "tri_overlaps": 0,
+  "min_dist_mm": 1.1247,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "cam_citasi",
+  "b": "kanat_profili",
+  "tri_overlaps": 0,
+  "min_dist_mm": 0.0011,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "cam_citasi",
+  "b": "kanat_takviye_vidalari",
+  "tri_overlaps": 0,
+  "min_dist_mm": null,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "cam_citasi_contasi",
+  "b": "kanat_profili",
+  "tri_overlaps": 0,
+  "min_dist_mm": null,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "cam_takoz_koprusu",
+  "b": "ikincil_sizdirmazlik",
+  "tri_overlaps": 0,
+  "min_dist_mm": 0.0014,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "cam_takoz_koprusu",
+  "b": "kanat_drenaj_kanallari",
+  "tri_overlaps": 0,
+  "min_dist_mm": null,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "cam_takoz_koprusu",
+  "b": "kanat_profili",
+  "tri_overlaps": 78,
+  "min_dist_mm": 0.0002,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "cam_takoz_koprusu",
+  "b": "kanat_takviye_vidalari",
+  "tri_overlaps": 0,
+  "min_dist_mm": 1.2982,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "drenaj_kapagi",
+  "b": "kasa_drenaj_kanallari",
+  "tri_overlaps": 0,
+  "min_dist_mm": 0.0013,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "drenaj_kapagi",
+  "b": "kasa_profili",
+  "tri_overlaps": 0,
+  "min_dist_mm": 0.0013,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "ikincil_sizdirmazlik",
+  "b": "isicam_citasi",
+  "tri_overlaps": 1178,
+  "min_dist_mm": 0.0,
+  "inter_volume_mm3": 0.6131
+ },
+ {
+  "a": "ikincil_sizdirmazlik",
+  "b": "kanat_profili",
+  "tri_overlaps": 0,
+  "min_dist_mm": null,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "ikincil_sizdirmazlik",
+  "b": "nem_alici",
+  "tri_overlaps": 0,
+  "min_dist_mm": 0.9987,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "isicam_citasi",
+  "b": "kanat_profili",
+  "tri_overlaps": 0,
+  "min_dist_mm": null,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "isicam_citasi",
+  "b": "nem_alici",
+  "tri_overlaps": 293,
+  "min_dist_mm": 0.0,
+  "inter_volume_mm3": 0.0
+ },
+ {
+  "a": "kanat_celik_takviye",
+  "b": "kanat_profili",
+  "tri_overlaps": 0,
+  "min_dist_mm": 0.69,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kanat_celik_takviye",
+  "b": "kanat_takviye_vidalari",
+  "tri_overlaps": 0,
+  "min_dist_mm": 0.0115,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kanat_celik_takviye",
+  "b": "kasa_profili",
+  "tri_overlaps": 0,
+  "min_dist_mm": null,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kanat_dis_cam_contasi",
+  "b": "kanat_profili",
+  "tri_overlaps": 32,
+  "min_dist_mm": 0.0007,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kanat_drenaj_kanallari",
+  "b": "kanat_profili",
+  "tri_overlaps": 8,
+  "min_dist_mm": 0.0,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kanat_drenaj_kanallari",
+  "b": "kasa_profili",
+  "tri_overlaps": 0,
+  "min_dist_mm": null,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kanat_ic_contasi",
+  "b": "kanat_profili",
+  "tri_overlaps": 48,
+  "min_dist_mm": 0.0,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kanat_ic_contasi",
+  "b": "kasa_profili",
+  "tri_overlaps": 69,
+  "min_dist_mm": 0.0002,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kanat_profili",
+  "b": "kanat_takviye_vidalari",
+  "tri_overlaps": 0,
+  "min_dist_mm": 0.0035,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kanat_profili",
+  "b": "kasa_celik_takviye",
+  "tri_overlaps": 0,
+  "min_dist_mm": null,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kanat_profili",
+  "b": "kasa_dis_contasi",
+  "tri_overlaps": 62,
+  "min_dist_mm": 0.0002,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kanat_profili",
+  "b": "kasa_profili",
+  "tri_overlaps": 0,
+  "min_dist_mm": null,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kanat_profili",
+  "b": "nem_alici",
+  "tri_overlaps": 0,
+  "min_dist_mm": null,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kanat_profili",
+  "b": "orta_conta",
+  "tri_overlaps": 28,
+  "min_dist_mm": 0.001,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kasa_celik_takviye",
+  "b": "kasa_profili",
+  "tri_overlaps": 0,
+  "min_dist_mm": 0.4999,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kasa_celik_takviye",
+  "b": "kasa_takviye_vidalari",
+  "tri_overlaps": 0,
+  "min_dist_mm": 0.0115,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kasa_dis_contasi",
+  "b": "kasa_profili",
+  "tri_overlaps": 16,
+  "min_dist_mm": 0.0,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kasa_drenaj_kanallari",
+  "b": "kasa_profili",
+  "tri_overlaps": 17,
+  "min_dist_mm": 0.0,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kasa_profili",
+  "b": "kasa_takviye_vidalari",
+  "tri_overlaps": 0,
+  "min_dist_mm": 0.0035,
+  "inter_volume_mm3": null
+ },
+ {
+  "a": "kasa_profili",
+  "b": "orta_conta",
+  "tri_overlaps": 540,
+  "min_dist_mm": 0.0,
+  "inter_volume_mm3": null
+ }
+]
