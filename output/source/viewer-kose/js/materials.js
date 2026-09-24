@@ -9,6 +9,8 @@
 //  - Röntgen merceği (SUP_LENS): ekrandaki dairenin içinde PVC çizilmez
 //  - Üretim hikâyesi: gönye yüzü ısınması (uHeat) ve kesit yüzü renk katmanı (uCapTint)
 //  - Isı haritası (uThermal): kesit yüzleri ve kolların serbest uç yüzleri 2B sıcaklık dokusuyla boyanır, diğerleri sönük
+//  - Tam pencere (SUP_WIN, window.js): numune bölgesi (x, y < 300 mm) atılır, sınırı ince çizgiyle belirtilir; kol ekseni
+//    süpürme özniteliğinden (aAxis) gelir; uWinGrow ile köşeden büyüyerek açılır
 import * as THREE from '../vendor/three-bundle.min.js';
 
 export const shared = {
@@ -27,6 +29,7 @@ export const shared = {
   uHeat: { value: 0 },                                    // kaynak: gönye yüzü ısınması (0..1)
   uCapTint: { value: new THREE.Vector4(1, 0.5, 0.15, 0) }, // kesit yüzüne renk katmanı (rgb, miktar): ekstrüzyon parıltısı
   uThermal: { value: 0 },                                 // ısı haritası geçişi (0..1)
+  uWinGrow: { value: 100 },                               // tam pencere: köşeden gösterilen yarıçap (m)
   uTemp: { value: null },                                 // sıcaklık dokusu (R = T / 20 °C), kesit koordinatı (sx, sy) mm
   uTempBox: { value: new THREE.Vector4(0, 0, 1, 1) },     // uv = ((sx, sy) - xy) / zw
   uWood: { value: null },
@@ -99,6 +102,7 @@ function patch(material, key, opts = {}) {
   if (opts.die) defs.SUP_DIE = '';
   if (opts.grain) defs.SUP_GRAIN = '';
   if (opts.triplanarMap) defs.SUP_TRI = '';
+  if (opts.win) defs.SUP_WIN = '';
   material.defines = Object.assign(material.defines || {}, defs);
   material.userData.lensable = !!opts.lens;             // röntgen merceğinde görünmez olan malzemeler (PVC)
 
@@ -114,6 +118,9 @@ uniform vec4 uODeq;
 attribute vec2 uv1;
 #endif
 varying float vFoil;
+#endif
+#ifdef SUP_WIN
+attribute float aAxis; varying float vAxis;
 #endif`)
       .replace('#include <fog_vertex>', `#include <fog_vertex>
 vWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
@@ -121,6 +128,9 @@ vWNrm = normalize(mat3(modelMatrix) * objectNormal);
 vOPos = transformed * uODeq.w + uODeq.xyz; vONrm = objectNormal;   // numunenin durağan konumu (m)
 #ifdef SUP_FOIL
 vFoil = uv1.x;
+#endif
+#ifdef SUP_WIN
+vAxis = aAxis;
 #endif`);
 
     let fs = shader.fragmentShader;
@@ -139,6 +149,9 @@ uniform float uThermal; uniform sampler2D uTemp; uniform vec4 uTempBox; uniform 
 ${THERMAL_GLSL}
 #ifdef SUP_LENS
 uniform vec4 uLens;
+#endif
+#ifdef SUP_WIN
+varying float vAxis; uniform float uWinGrow;
 #endif
 #ifdef SUP_TRI
 uniform sampler2D uSpangle;
@@ -167,7 +180,11 @@ float capHatch(vec3 wp){
     // renk: kol ekseni, kalıp izi, folyo, kaynak dikişi, galvaniz deseni
     fs = fs.replace('#include <color_fragment>', `#include <color_fragment>
       vec3 supN0 = normalize(vONrm);
+#ifdef SUP_WIN
+      bool supLegX = vAxis < 0.5;                              // pencere: yatay / düşey profil (süpürme özniteliği)
+#else
       bool supLegX = vOPos.x >= vOPos.y;                       // alt kol: X, yan kol: Y ekseni
+#endif
       vec3 supAx = supLegX ? vec3(1.0, 0.0, 0.0) : vec3(0.0, 1.0, 0.0);
       float supSide = 1.0 - smoothstep(0.35, 0.6, abs(dot(supN0, supAx)));
       float supPx = length(fwidth(vOPos));                     // piksel başına nesne boyu (m)
@@ -263,6 +280,9 @@ float capHatch(vec3 wp){
     fs = fs.replace('#include <clipping_planes_fragment>', `#ifdef SUP_LENS
   if ( uLens.w > 0.5 && distance( gl_FragCoord.xy, uLens.xy ) < uLens.z ) discard;
 #endif
+#ifdef SUP_WIN
+  if ( ( vOPos.x < 0.3 && vOPos.y < 0.3 ) || length( vOPos.xy ) > uWinGrow ) discard;   // numune bölgesi / büyüme
+#endif
 #include <clipping_planes_fragment>`);
     fs = fs.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 #ifdef SUP_SEAM
@@ -300,7 +320,14 @@ float capHatch(vec3 wp){
     vec3 vdir = normalize( vViewPosition );
     float fr = pow( 1.0 - clamp( abs( dot( normalize( normal ), vdir ) ), 0.0, 1.0 ), 2.2 );
     gl_FragColor.rgb = mix( gl_FragColor.rgb, uHiColor, uHi * ( 0.08 + 0.5 * fr ) );
-  }`);
+  }
+#ifdef SUP_WIN
+  {   // numune sınırı: ince turuncu çizgi (ekranda en az ~1,5 piksel)
+    float w = max( 0.0015, fwidth( vOPos.x + vOPos.y ) * 1.5 );
+    float ln = ( vOPos.y < 0.3 && vOPos.x - 0.3 < w ) || ( vOPos.x < 0.3 && vOPos.y - 0.3 < w ) ? 1.0 : 0.0;
+    gl_FragColor.rgb = mix( gl_FragColor.rgb, vec3( 1.0, 0.69, 0.23 ), ln * 0.9 );
+  }
+#endif`);
     shader.fragmentShader = fs;
   };
   const cacheKey = 'kose-' + key + Object.keys(defs).join('');
@@ -333,8 +360,9 @@ function patchGlass(material) {
   return material;
 }
 
-// tier: 'high' (gerçek GPU: EPDM sheen) | 'low'
-export function createMaterial(key, tex, def = {}, tier = 'high') {
+// tier: 'high' (gerçek GPU: EPDM sheen) | 'low'; extra.win: tam pencere malzemesi (window.js)
+export function createMaterial(key, tex, def = {}, tier = 'high', extra = {}) {
+  const win = !!extra.win;
   const common = { aoMap: tex.ao, aoMapIntensity: 1.0, side: THREE.DoubleSide };
   let m;
   switch (key) {
@@ -342,7 +370,7 @@ export function createMaterial(key, tex, def = {}, tier = 'high') {
     case 'cover':
       m = new THREE.MeshPhysicalMaterial({ ...common, color: 0xf3f3f0, roughness: 0.34, metalness: 0,
         clearcoat: 0.35, clearcoatRoughness: 0.28, specularIntensity: 0.6 });
-      return patch(m, key, { foil: !!def.foil, seam: def.seam || 0, die: key === 'pvc', lens: true, thermal: true });
+      return patch(m, key, { foil: !!def.foil, seam: def.seam || 0, die: key === 'pvc', lens: true, thermal: true, win });
     case 'steel':
       m = new THREE.MeshStandardMaterial({ ...common, color: 0xc2c7cc, roughness: 0.36, metalness: 1.0 });
       return patch(m, key, { triplanarMap: tex.spangle, thermal: true });
@@ -354,10 +382,10 @@ export function createMaterial(key, tex, def = {}, tier = 'high') {
       } else {
         m = new THREE.MeshStandardMaterial({ ...common, color: key === 'epdm' ? 0x171717 : 0x1b1b1b, roughness: key === 'epdm' ? 0.74 : 0.58, metalness: 0 });
       }
-      return patch(m, key, { grain: true, thermal: true });
+      return patch(m, key, { grain: true, thermal: true, win });
     case 'alu':
       m = new THREE.MeshStandardMaterial({ ...common, color: 0xbfc4ca, roughness: 0.42, metalness: 1.0 });
-      return patch(m, key);
+      return patch(m, key, { win });
     case 'desic':
       m = new THREE.MeshStandardMaterial({ ...common, color: 0xd6c296, roughness: 0.95, metalness: 0 });
       return patch(m, key, { grain: true });

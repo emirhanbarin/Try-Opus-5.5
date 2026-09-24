@@ -158,7 +158,7 @@
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17M5.2 7.5l13.6 9M5.2 16.5l13.6-9" class="dim"/></svg>
       <span id="finishName">Beyaz</span>
     </button>
-    <button class="tool-btn" id="btnTools" aria-label="Araçlar" aria-pressed="false" title="Üretim hikâyesi, röntgen merceği, kamara sayacı, ısı haritası, ölçüm">
+    <button class="tool-btn" id="btnTools" aria-label="Araçlar" aria-pressed="false" title="Üretim hikâyesi, röntgen merceği, kamara sayacı, ısı haritası, ölçüm, köşeden pencereye">
       <svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6" class="dim"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6" class="dim"/><circle cx="16.75" cy="16.75" r="3.4"/></svg>
       <span>Araçlar</span>
     </button>
@@ -239,6 +239,7 @@
     <button class="tool-tile" id="tChambers"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16M10 4v16M15 10v10" class="dim"/></svg><b>Kamaraları say</b><small>Kasa 14 · kanat 11 (s.9)</small></button>
     <button class="tool-tile" id="tThermal" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M10 13.8V5.5a2 2 0 0 1 4 0v8.3a4 4 0 1 1-4 0z"/><path d="M12 9.5v7" class="hot"/><path d="M17.5 6h2.5M17.5 9.5h2.5" class="dim"/></svg><b>Isı haritası</b><small>İç 20 °C · dış 0 °C, kesitte sıcaklık</small></button>
     <button class="tool-tile" id="tMeasure" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 16.5L16.5 4 20 7.5 7.5 20z"/><path d="M8 12.5l1.8 1.8M10.8 9.7l1.8 1.8M13.6 6.9l1.8 1.8" class="dim"/></svg><b>Ölç</b><small>İki nokta arası mm; köşe ve kenara yapışır</small></button>
+    <button class="tool-tile" id="tWindow" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="1.2"/><rect x="7" y="6.5" width="10" height="11" rx=".6" class="dim"/><path d="M4 20.5v-6.5h6.5" class="hot"/></svg><b>Köşeden pencereye</b><small>Ölçü girin: kesim listesi, drenaj, menteşe</small></button>
   </div>
 </div>
 
@@ -254,6 +255,30 @@
 </div>
 <div id="chamberLabels" hidden aria-hidden="true"></div>
 <div class="story-tag" id="storyTag" hidden>240–280 °C</div>
+<!-- Köşeden pencereye -->
+<aside class="panel cfg-panel" id="cfgPanel" hidden aria-label="Köşeden pencereye">
+  <div class="panel-head">
+    <div><div class="info-group">Supremo 85 · tek kanat</div><div class="panel-title">Köşeden pencereye</div></div>
+    <button class="icon-btn small" id="cfgClose" aria-label="Köşeye dön"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="cfg-controls">
+    <div class="cfg-dim">
+      <div class="slider-label"><span>Genişlik (kasa dış)</span><span id="cfgWVal">1.200 mm</span></div>
+      <div class="cfg-row"><button class="icon-btn small" data-cfg-step="W:-10" aria-label="Genişliği azalt">−</button><input type="range" id="cfgW" aria-label="Genişlik"><button class="icon-btn small" data-cfg-step="W:10" aria-label="Genişliği artır">+</button></div>
+    </div>
+    <div class="cfg-dim">
+      <div class="slider-label"><span>Yükseklik (kasa dış)</span><span id="cfgHVal">1.400 mm</span></div>
+      <div class="cfg-row"><button class="icon-btn small" data-cfg-step="H:-10" aria-label="Yüksekliği azalt">−</button><input type="range" id="cfgH" aria-label="Yükseklik"><button class="icon-btn small" data-cfg-step="H:10" aria-label="Yüksekliği artır">+</button></div>
+    </div>
+    <div class="seg" role="radiogroup" aria-label="Açılım tipi">
+      <button class="seg-btn active" data-wtype="ice" role="radio" aria-checked="true">İçe açılır <small>s.17</small></button>
+      <button class="seg-btn" data-wtype="cift" role="radio" aria-checked="false">Çift açılım <small>s.24</small></button>
+    </div>
+  </div>
+  <div class="cfg-body" id="cfgBody"></div>
+  <button class="btn" id="cfgBack">Köşeye dön</button>
+</aside>
+<div id="cfgTags" hidden aria-hidden="true"></div>
 <!-- Ölçüm -->
 <div class="measure-bar" id="measureBar" hidden>
   <div class="mb-text"><b>Ölçüm</b><span id="measureHint">İki noktaya dokunun</span><small>Modelden ölçüm; döküman ölçüleri s.9'dadır</small></div>
@@ -316,7 +341,7 @@
       <div class="kb"><kbd>O</kbd></div><div class="kb">360° otomatik döndür</div>
       <div class="kb"><kbd>E</kbd> · <kbd>C</kbd> · <kbd>D</kbd></div><div class="kb">Patlat · kesit · ölçüler</div>
       <div class="kb"><kbd>H</kbd> / <kbd>I</kbd></div><div class="kb">Seçili parçayı gizle / izole et</div>
-      <div class="kb"><kbd>U</kbd> · <kbd>X</kbd> · <kbd>K</kbd> · <kbd>S</kbd> · <kbd>M</kbd></div><div class="kb">Üretim hikâyesi · röntgen merceği · kamara sayacı · ısı haritası · ölçüm</div>
+      <div class="kb"><kbd>U</kbd> · <kbd>X</kbd> · <kbd>K</kbd> · <kbd>S</kbd> · <kbd>M</kbd> · <kbd>P</kbd></div><div class="kb">Üretim hikâyesi · röntgen merceği · kamara sayacı · ısı haritası · ölçüm · köşeden pencereye</div>
       <div class="kb"><kbd>R</kbd> · <kbd>Esc</kbd></div><div class="kb">Sıfırla · seçimi kaldır</div>
     </div>
     <p class="help-note">Kesit geometrisi teknik dökümanın 9. sayfasındaki vektör çizimden birebir çıkarılmıştır; köşe düzeni s.6, s.8, s.10, s.11 ve s.14'e göredir. Tüm dosyalar yereldir; internet bağlantısı gerekmez.</p>

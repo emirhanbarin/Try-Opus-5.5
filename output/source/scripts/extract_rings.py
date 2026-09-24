@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """Kesit dış konturları ve kamaraları -> görüntüleyici veri dosyaları (s.9 poligonları, section_mm.json).
 
-rings-data.js    : profil / çıta / conta dış konturları (0,05 mm sadeleştirilmiş) ve cam panelleri.
+rings-data.js    : profil / çıta / conta / çıta dudağı / ısıcam ara çıtası ve sızdırmazlık dış konturları (0,05 mm
+                   sadeleştirilmiş) ve cam panelleri.
                    Kaynak taşıntısı (üretim hikâyesi) ve tam pencere görünümü bu konturları süpürür.
 chambers-data.js : kasa (14) ve kanat (11) kapalı kamaraları; dıştan içe (sx) sıralı. Kamara sayacı ve ısı
                    haritası dolgusu bu poligonlardan üçgenlenir.
@@ -31,7 +32,8 @@ def ring_ext(key):
 
 
 rings = {}
-for key in ('frame', 'sash', 'bead', 'gasket_frame_ext', 'gasket_middle', 'gasket_interior', 'gasket_glazing_ext'):
+for key in ('frame', 'sash', 'bead', 'gasket_frame_ext', 'gasket_middle', 'gasket_interior', 'gasket_glazing_ext',
+            'bead_lip_top', 'bead_lip_bot', 'sealant1', 'sealant2', 'spacer1', 'spacer2'):
     rings[key] = flat(ring_ext(key))
 glass = []
 for i in (1, 2, 3):

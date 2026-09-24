@@ -1,5 +1,5 @@
 // Keşif turu: veri güdümlü bölümler (kamera, patlatma, kesit, hayalet görünüm, izolasyon, işaretler, su, renk,
-// üretim hikâyesi, röntgen merceği, kamara sayacı, ısı haritası). Normal kullanımda ileri/geri/duraklat; kiosk tanıtım modunda
+// üretim hikâyesi, röntgen merceği, kamara sayacı, ısı haritası, köşeden pencereye). Normal kullanımda ileri/geri/duraklat; kiosk tanıtım modunda
 // döngüde oynar; start({ only }) tek bir bölümü oynatıp biter (Araçlar'dan üretim hikâyesi).
 import { TOUR } from './tour-data.js';
 
@@ -48,7 +48,7 @@ export class Tour {
   }
   cleanup() {
     const app = this.app, m = app.modules;
-    m.story?.stop(); m.thermal?.setOn(false, { view: false }); m.measure?.setOn(false); m.chambers?.stop();
+    m.story?.stop(); m.thermal?.setOn(false, { view: false }); m.measure?.setOn(false); m.config?.exit({ instant: true }); m.chambers?.stop();
     if (m.lens?.on) { m.lens.setOn(false); app.$('tLens')?.setAttribute('aria-pressed', 'false'); }
     m.water.stop(); m.hotspots.setVisible(false); m.hotspots.setCallouts(false);
     app.setGhost(null);
@@ -74,9 +74,9 @@ export class Tour {
     if (ch.finishes) { this.finishSeq = ch.finishes; this.finishIdx = 0; this.finishTimer = 0; app.setFinish(ch.finishes[0]); }
     else if (app.state.finish !== 'beyaz' && this.attract) app.setFinish('beyaz');
     app.setTurntable(!!ch.turn);
-    // kamera: patlatma hedefine göre sığdırılmış poz
-    const pose = app.viewPose(ch.view, ch.explode || 0);
-    app.animateCamera(pose.pos, pose.target, 1500, pose.fov);
+    // kamera: patlatma hedefine göre sığdırılmış poz (pencere bölümünde yapılandırıcı kendini çerçeveler)
+    if (ch.window) m.config.open(ch.window);
+    else { const pose = app.viewPose(ch.view, ch.explode || 0); app.animateCamera(pose.pos, pose.target, 1500, pose.fov); }
     if (ch.lens) m.lens.setOn(true, { auto: true });
     if (ch.chambers) m.chambers.run();
     if (ch.thermal) m.thermal.setOn(true, { view: false });

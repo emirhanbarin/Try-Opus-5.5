@@ -17,7 +17,7 @@ Siteyi (`../site`) üreten ham dosyalar ve betikler. Sunulmaz; yeniden üretim i
 | `env/` | Stüdyo HDRI: v1 prosedürel (`studio.ktx2`, düz kesit), v2 Blender/Cycles (`studio2.ktx2`, köşe) |
 | `tex/` | Galvaniz deseni, ahşap folyo deseni (KTX2 + önizleme) |
 | `viewer/` | Düz kesit görüntüleyicisi: ES modül kaynakları, three.js paketi, derleme betiği |
-| `viewer-kose/` | Köşe görüntüleyicisi (fuar sürümü): tur, işaretler, su animasyonu, kiosk, çizim bindirme, üretim hikâyesi (`story.js`), röntgen merceği (`lens.js`), kamara sayacı (`chambers.js`), ısı haritası (`thermal.js`), canlı 2B kesit (`section-inset.js`), ölçüm (`measure.js`) modülleri |
+| `viewer-kose/` | Köşe görüntüleyicisi (fuar sürümü): tur, işaretler, su animasyonu, kiosk, çizim bindirme, üretim hikâyesi (`story.js`), röntgen merceği (`lens.js`), kamara sayacı (`chambers.js`), ısı haritası (`thermal.js`), canlı 2B kesit (`section-inset.js`), ölçüm (`measure.js`), köşeden pencereye (`configurator.js`, `window.js`; hesaplar `configurator-data.js`) modülleri |
 
 Yeniden üretim (Python 3.11 + `pip install bpy pymupdf shapely scipy pillow`, KTX-Software 4.3, Node + `@gltf-transform/cli`, `esbuild`, `playwright-core`):
 
@@ -51,7 +51,7 @@ Yeniden üretim (Python 3.11 + `pip install bpy pymupdf shapely scipy pillow`, K
 7. Görüntüleyiciye gömülen PDF verileri:
    - `scripts/extract_drawing_lines.py`: s.9 çizim bindirmesi → `viewer-kose/js/drawing-data.js`.
    - `scripts/extract_water_path.py`: s.9 su okları + yarık konumları → `viewer-kose/js/water-path.js`. Yol, kesit poligonlarına göre denetlenir.
-   - `scripts/extract_rings.py`: `section_mm.json` → `viewer-kose/js/rings-data.js` (0,05 mm sadeleştirilmiş dış konturlar: kaynak taşıntısı, tam pencere) ve `chambers-data.js` (kasa 14, kanat 11 kamara).
+   - `scripts/extract_rings.py`: `section_mm.json` → `viewer-kose/js/rings-data.js` (0,05 mm sadeleştirilmiş dış konturlar: profiller, contalar, çıta dudakları, ısıcam ara çıtası ve sızdırmazlık; kaynak taşıntısı ve tam pencere bunları süpürür) ve `chambers-data.js` (kasa 14, kanat 11 kamara).
 8. Isı haritası: `KTX=<ktx yolu> python3 scripts/thermal_section.py` (yaklaşık 1 dk).
    - `section_mm.json` kesiti 0,1 mm ızgarada sonlu farklarla çözülür (EN ISO 10077-2 yöntemi): iç 20 °C / Rsi 0,13, dış 0 °C / Rse 0,04; PVC 0,17 · EPDM 0,25 · çelik 50 W/(m·K); ısıcam 0,035 W/(m·K) yalıtım paneliyle temsil edilir; kapalı boşluklar §6.4.2 eşdeğer iletkenliğiyle.
    - Çıktılar: `../site/assets/kose/isi.ktx2` (R16F, 0,2 mm/piksel, T / 20 °C; 1/1024 basamak), `viewer-kose/js/thermal-data.js` (doku kutusu), `thermal_check.json`.
@@ -64,6 +64,7 @@ Yeniden üretim (Python 3.11 + `pip install bpy pymupdf shapely scipy pillow`, K
 - Tarayıcı testleri (Xvfb + yazılımsal GL):
   - `scripts/interaction_test.mjs <url>/kesit.html`: düz kesit.
   - `scripts/interaction_test_kose.mjs <url>/index.html`: köşe; http ve `file://` için ayrı ayrı çalıştırılır.
+  - `scripts/test_configurator.mjs` (tarayıcısız, Node): köşeden pencereye hesapları; s.5, s.8, s.10, s.11, s.17 ve s.24 tabloları, sınır değerler (500, 1000, 1100, 1400 mm…), aralık dışı uyarılar ve yarık yerlerinin `kose_info.json` ile tutarlılığı.
   - `scripts/kiosk_soak.mjs <url> 30 1920x1080`: kiosk dayanıklılığı.
   - `scripts/bench.mjs`: performans.
 

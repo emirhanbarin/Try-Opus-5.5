@@ -4,7 +4,7 @@ Supremo 85 (8500 serisi) uPVC pencere sisteminin iki etkileşimli 3B numunesi. �
 
 | Sayfa | İçerik |
 |---|---|
-| **Köşe kesiti** (`index.html`, ilk açılan) | 45° kaynaklı köşe numunesi (2 × 300 mm kol): keşif turu, 360° otomatik döndürme, su tahliyesi animasyonu, teknik çizim bindirme, renk/folyo seçenekleri, fuar/kiosk modu |
+| **Köşe kesiti** (`index.html`, ilk açılan) | 45° kaynaklı köşe numunesi (2 × 300 mm kol): keşif turu, 360° otomatik döndürme, su tahliyesi animasyonu, teknik çizim bindirme, renk/folyo seçenekleri (iki renkli ve karşılaştırma perdesi), üretim hikâyesi, röntgen merceği, kamara sayacı, ısı haritası, canlı 2B kesit, ölçüm, köşeden pencereye yapılandırıcı, fuar/kiosk modu |
 | **Düz kesit** (`kesit.html`) | 300 mm düz kesit numunesi (önceki sürüm, değiştirilmedi) |
 
 İki sayfa arasında üst ortadaki **Köşe kesiti · Düz kesit** seçicisiyle geçilir. Kesit geometrisi teknik dökümanın 9. sayfasındaki vektör çizimden birebir çıkarılmıştır.
@@ -55,6 +55,7 @@ Tarayıcı: WebGL 2 destekli güncel Chrome, Edge, Firefox veya Safari (16.4+).
 | Kamara sayacı | **Araçlar** → Kamaraları say · `K`: kasanın 14, kanadın 11 kamarası sırayla renklenir ve numaralanır (s.9) |
 | Isı haritası | **Araçlar** → Isı haritası · `S`: iç 20 °C / dış 0 °C koşulunda kesitteki sıcaklık; kesit yüzleri, kol uçları ve kamaralar renklenir, 10 °C eş sıcaklık çizgisi kalın. EN ISO 10077-2 yöntemiyle yapılmış gösterim amaçlı 2B hesaptır; açıklamada resmi değer yazar (Uf = 1,0 W/(m²K), ift Rosenheim) |
 | Canlı 2B kesit | **Kesit** açıkken sol altta: düzlemdeki gerçek kesit, ölçek çubuğu; düzlem drenaj yarığını (A, B, C, D-E) ya da vidayı kesince etiket. Kesit panelindeki anahtarla kapatılır |
+| Köşeden pencereye | **Araçlar** → Köşeden pencereye · `P`: genişlik × yükseklik (kasa dış ölçüsü, 620–2000 × 620–2400 mm) ve açılım (içe açılır / çift açılım) seçin; numune, tam pencerenin sol alt köşesi olur. Kart: kesim listesi (s.5, s.10, s.11), drenaj kanalı adedi (s.8, s.11), menteşe adedi ve yerleri (s.17), kol yüksekliği (s.17, s.11), çift açılımda uygun ispanyolet ve makas (s.24). Menteşe, kol ve donanım biçimleri temsilidir; konumları dökümandandır. Sabit cam, kayıt ve kapı tipleri bu sürümde yoktur |
 | Ölçüm | **Araçlar** → Ölç · `M`: iki noktaya dokunun; köşe ve kenarlara, kesit açıkken kesit hattına yapışır (0,1 mm). En fazla 3 ölçü. Modelden ölçümdür; döküman ölçüleri s.9'dadır |
 | Bilgi işaretleri | **Görünüm** → Bilgi işaretleri |
 | Teknik özellikler | Sağ üstte **Özellikler** (döküman değerleri, sayfa numaralarıyla) |

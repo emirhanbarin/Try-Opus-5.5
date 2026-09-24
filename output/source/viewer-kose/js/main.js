@@ -15,6 +15,7 @@ import { Story } from './story.js';
 import { Thermal } from './thermal.js';
 import { SectionInset } from './section-inset.js';
 import { Measure } from './measure.js';
+import { Configurator } from './configurator.js';
 
 const { OrbitControls, GLTFLoader, KTX2Loader, MeshoptDecoder, computeBoundsTree, disposeBoundsTree, acceleratedRaycast } = THREE;
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -39,6 +40,7 @@ const state = {
   compare: { on: false, right: 'altinmese', x: 0.5, side: 'right' },   // renk perdesi (sağ taraf karşılaştırma rengi)
   needsRender: 2, shadowDirty: true,
   camAnim: null, intro: true,
+  windowMode: false,                 // köşeden pencereye (configurator.js)
 };
 const parts = new Map();              // id -> { def, mesh, mat, base, hi, visible, ghost }
 // köşe koordinatları (mm): X 0..300 alt kol, Y 0..300 yan kol, Z iç (+) / dış (-); d: gönye düzlemine dik (x - y)/√2
@@ -197,6 +199,7 @@ async function boot() {
   modules.thermal = new Thermal(app, heatTex);
   modules.inset = new SectionInset(app);
   modules.measure = new Measure(app);
+  modules.config = new Configurator(app);
   modules.story = new Story(app);
   modules.tour = new Tour(app);
   modules.kiosk = new Kiosk(app, KIOSK);
@@ -211,13 +214,14 @@ async function boot() {
   const probe = new THREE.Mesh(parts.get('kasa_profili').mesh.geometry, ghostMat); probe.position.copy(MODEL_OFFSET);
   scene.add(probe);
   modules.water.setVisible(true);
+  modules.config.prewarm(true);                        // tam pencere malzemeleri (SUP_WIN)
   const pvcMats = [...parts.values()].map((p) => p.mat);
   for (const lens of [true, false]) for (const on of [true, false]) {
     setLensDefine(pvcMats, lens);
     attachClipping(on);
     try { await renderer.compileAsync(scene, camera); } catch (e) { renderer.compile(scene, camera); }
   }
-  scene.remove(probe); modules.water.setVisible(false);
+  scene.remove(probe); modules.water.setVisible(false); modules.config.prewarm(false);
   attachClipping(state.clip.on);
   $('progressBar').style.width = '100%'; $('loaderPct').textContent = '100%';
   loader.text.textContent = 'Hazır';
@@ -338,7 +342,7 @@ function setExplodeTarget(v, animate, dur) {
 }
 
 // ------------------------------------------------------------------ visibility / selection / ghost
-function isShown(p) { return p.visible && (!state.soloSet || state.soloSet.has(p.def.id)); }
+function isShown(p) { return p.visible && (!state.soloSet || state.soloSet.has(p.def.id)) && !modules.config?.isHidden(p.def.id); }
 function refreshVisibility() {
   parts.forEach((p) => { p.mesh.visible = isShown(p); });
   document.querySelectorAll('.part-row').forEach((row) => {
@@ -349,7 +353,7 @@ function refreshVisibility() {
     row.querySelector('.solo').classList.toggle('on', !!state.soloSet && state.soloSet.size === 1 && state.soloSet.has(p.def.id));
   });
   $('btnUnsolo').disabled = !state.soloSet;
-  const anyHidden = [...parts.values()].some((p) => !isShown(p)) || !!state.ghostSet;
+  const anyHidden = [...parts.values()].some((p) => !isShown(p) && !modules.config?.isHidden(p.def.id)) || !!state.ghostSet;
   aoMixTarget = anyHidden ? 1 : 0;
   if (state.selected) updateInfoButtons();
   state.shadowDirty = true;
@@ -440,7 +444,7 @@ function pick(x, y) {
   ndc.set(((x - rect.left) / rect.width) * 2 - 1, -((y - rect.top) / rect.height) * 2 + 1);
   raycaster.setFromCamera(ndc, camera);
   const meshes = []; parts.forEach((p) => { if (p.mesh.visible && !p.ghost) meshes.push(p.mesh); });
-  if (modules.story?.active) return null;
+  if (modules.story?.active || state.windowMode) return null;   // hikâyede ve pencere kipinde seçim yok
   let hits = raycaster.intersectObjects(meshes, false).filter((h) => !state.clip.on || clipPlane.distanceToPoint(h.point) >= -1e-5);
   if (modules.lens?.contains(x, y)) hits = hits.filter((h) => !parts.get(h.object.userData.partId).mat.userData.lensable);
   if (!hits.length) return null;
@@ -637,7 +641,7 @@ function markLayout() { layoutDirty = true; }
 function watchLayout() {
   const mo = new MutationObserver(markLayout);
   const ro = new ResizeObserver(markLayout);
-  for (const id of ['partsPanel', 'infoPanel', 'hotCard', 'sectionPop', 'tourCard', 'dock', 'thermLegend', 'secInset', 'measureBar']) {
+  for (const id of ['partsPanel', 'infoPanel', 'hotCard', 'sectionPop', 'tourCard', 'dock', 'thermLegend', 'secInset', 'measureBar', 'cfgPanel']) {
     const el = $(id); if (!el) continue;
     mo.observe(el, { attributes: true, attributeFilter: ['hidden', 'class'] });
     ro.observe(el);
@@ -656,7 +660,7 @@ function measureFreeArea() {
   const rectW = (id) => { const el = $(id); if (!el || el.hidden || el.classList.contains('collapsed')) return 0; const r = el.getBoundingClientRect(); return r.width > 0 ? r.right + 16 : 0; };
   let left = narrow ? 0 : rectW('partsPanel');
   if (!narrow && modules.inset?.visible) left = Math.max(left, rectW('secInset'));   // canlı kesit penceresi (sol alt)
-  const rightEl = ['infoPanel', 'hotCard', 'sectionPop'].map($).find((el) => el && !el.hidden) || null;
+  const rightEl = ['cfgPanel', 'infoPanel', 'hotCard', 'sectionPop'].map($).find((el) => el && !el.hidden) || null;
   const right = narrow || !rightEl ? 0 : W - rightEl.getBoundingClientRect().left + 16;
   const topEl = document.querySelector('.topbar');
   let top = topEl ? topEl.getBoundingClientRect().bottom + 8 : 84;
@@ -967,11 +971,14 @@ function buildUI() {
 
   // araçlar: üretim hikâyesi, röntgen merceği, kamara sayacı
   $('btnTools').onclick = () => { const pop = $('toolsPop'); const o = pop.hidden; closePopovers(); pop.hidden = !o; $('btnTools').setAttribute('aria-pressed', String(o)); };
-  $('tStory').onclick = () => { closePopovers(); modules.tour.start({ only: 'uretim' }); userActive(); };
-  $('tLens').onclick = () => { const on = !modules.lens.on; modules.lens.setOn(on); $('tLens').setAttribute('aria-pressed', String(on)); if (on) closePopovers(); userActive(); };
-  $('tChambers').onclick = () => { closePopovers(); runChambers(); userActive(); };
-  $('tThermal').onclick = () => { modules.tour?.stop(false); closePopovers(); modules.thermal.toggle(); userActive(); };
-  $('tMeasure').onclick = () => { modules.tour?.stop(false); closePopovers(); modules.measure.toggle(); userActive(); };
+  // pencere kipindeyken diğer araçlar önce köşeye döner
+  const leaveWindow = () => modules.config?.exit({ instant: true });
+  $('tStory').onclick = () => { closePopovers(); leaveWindow(); modules.tour.start({ only: 'uretim' }); userActive(); };
+  $('tLens').onclick = () => { leaveWindow(); const on = !modules.lens.on; modules.lens.setOn(on); $('tLens').setAttribute('aria-pressed', String(on)); if (on) closePopovers(); userActive(); };
+  $('tChambers').onclick = () => { closePopovers(); leaveWindow(); runChambers(); userActive(); };
+  $('tWindow').onclick = () => { modules.tour?.stop(false); closePopovers(); if (modules.config.on) modules.config.exit(); else modules.config.open(); userActive(); };
+  $('tThermal').onclick = () => { modules.tour?.stop(false); closePopovers(); leaveWindow(); modules.thermal.toggle(); userActive(); };
+  $('tMeasure').onclick = () => { modules.tour?.stop(false); closePopovers(); leaveWindow(); modules.measure.toggle(); userActive(); };
   $('chamberClose').onclick = () => modules.chambers.stop();
   $('btnFinish').onclick = () => { const pop = $('finishPop'); const o = pop.hidden; closePopovers(); pop.hidden = !o; $('btnFinish').setAttribute('aria-pressed', String(o)); };
 
@@ -1074,6 +1081,7 @@ function resetAll() {
   modules.water?.stop();
   modules.thermal?.setOn(false, { view: false });
   modules.measure?.setOn(false);
+  modules.config?.exit({ instant: true });
   modules.chambers?.stop();
   if (modules.lens?.on) { modules.lens.setOn(false); $('tLens').setAttribute('aria-pressed', 'false'); }
   if (state.compare.on) setCompare(false);
@@ -1099,6 +1107,7 @@ function onKey(e) {
     return;
   }
   if (anyModalOpen()) return;
+  if (state.windowMode && (c === 'KeyE' || c === 'KeyC' || c === 'KeyD')) return;   // pencere kipinde kapalı araçlar
   if (c === 'KeyH' && state.selected) toggleVisible(state.selected);
   else if (c === 'KeyI' && state.selected) toggleSolo(state.selected);
   else if (c === 'KeyF' && state.selected) focusPart(state.selected);
@@ -1114,6 +1123,7 @@ function onKey(e) {
   else if (c === 'KeyK') runChambers();
   else if (c === 'KeyS') $('tThermal').click();
   else if (c === 'KeyM') $('tMeasure').click();
+  else if (c === 'KeyP') $('tWindow').click();
   else if (c === 'KeyU') modules.tour.start({ only: 'uretim' });
   else if (c === 'KeyR') resetAll();
   else if (e.key === '?') $('helpModal').hidden = false;
@@ -1234,6 +1244,7 @@ const app = {
   $, toWorld, setView, viewPose, animateCamera, setExplodeTarget, setClip, updateClip, select, setGhost, refreshVisibility,
   setTurntable, setFinish, setDims, setDrawing, setHotspots, resetAll, focusPart, closePopovers, fitDistance, userActive,
   restoreQuality, markLayout: () => markLayout(), applyExplode, addClipMaterial, ghostMat, setCompare, runChambers, clipPlane,
+  setStage: (on) => { if (shadow) shadow.group.visible = on; state.needsRender = 2; },
   modules, onFrame: (fn) => frameHooks.push(fn), requestRender: (n = 2) => { state.needsRender = Math.max(state.needsRender, n); },
   get tier() { return tier; },
 };
