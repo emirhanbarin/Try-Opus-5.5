@@ -136,7 +136,9 @@ body.touring .info-panel { display: none; }
 #specsModal .info-block { margin: 14px 18px 0; }
 
 /* ---------- kiosk tanıtımı ---------- */
-.attract { position: fixed; left: 50%; bottom: 34px; transform: translateX(-50%); z-index: 12; cursor: pointer; }
+/* kimlikle seçilir: tur, tanıtım sırasında body'ye de "attract" sınıfını ekler (body.attract); sınıf seçicisi body'yi
+   sabit konumlu, sıfır boyutlu bir kutuya çevirip sahneyi ve arayüzü görünmez yapıyordu */
+#attract { position: fixed; left: 50%; bottom: 34px; transform: translateX(-50%); z-index: 12; cursor: pointer; }
 .attract-pill { display: flex; align-items: center; gap: 16px; padding: 16px 30px 16px 22px; border-radius: 40px; background: rgba(12, 15, 20, .72); border: 1px solid rgba(160, 220, 255, .35);
   font-size: 20px; font-weight: 650; letter-spacing: .01em; box-shadow: 0 12px 36px rgba(0, 0, 0, .45); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   animation: breathe 3s ease-in-out infinite; }

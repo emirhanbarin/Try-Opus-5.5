@@ -385,6 +385,16 @@ await kp.waitForFunction(() => window.__viewer.modules.kiosk.attract && window._
 const at = await kp.evaluate(() => ({ attract: window.__viewer.modules.kiosk.attract, tour: window.__viewer.modules.tour.active, loop: window.__viewer.modules.tour.loop }));
 check('kiosk: boşta → tanıtım (döngülü tur)', at.attract && at.tour && at.loop, JSON.stringify(at));
 check('kiosk: tanıtımda açık pencere kapanır', await kp.evaluate(() => document.getElementById('helpModal').hidden));
+// tanıtım ekranı gerçekten görünür: body konumlandırılmamış, sahne tüm ekranı kaplıyor, tur kartı ve çağrı ekranda
+// (body'ye eklenen "attract" sınıfı bir sınıf seçicisine takılıp sayfayı boş gösteriyordu)
+const vis = await kp.evaluate(() => {
+  const r = (id) => { const b = document.getElementById(id).getBoundingClientRect(); return { w: Math.round(b.width), h: Math.round(b.height), x: Math.round(b.left), y: Math.round(b.top) }; };
+  const inView = (b) => b.w > 0 && b.h > 0 && b.x >= 0 && b.y >= 0 && b.x + b.w <= innerWidth && b.y + b.h <= innerHeight;
+  const cs = getComputedStyle(document.body);
+  const sc = r('scene'), tc = r('tourCard'), ap = r('attract');
+  return { pos: cs.position, transform: cs.transform, scene: sc.w === innerWidth && sc.h === innerHeight, tour: inView(tc), call: inView(ap) };
+});
+check('kiosk: tanıtım ekranı görünür (sahne tam ekran, tur kartı ve çağrı ekranda)', vis.pos === 'static' && vis.transform === 'none' && vis.scene && vis.tour && vis.call, JSON.stringify(vis));
 await shot(kp, '10_kiosk_tanitim', 2500);
 await kp.touchscreen.tap(540, 700); await kp.waitForTimeout(3000);
 const af = await kp.evaluate(() => ({ attract: window.__viewer.modules.kiosk.attract, tour: window.__viewer.modules.tour.active, sel: window.__viewer.state.selected }));
