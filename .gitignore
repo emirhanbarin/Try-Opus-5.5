@@ -7,3 +7,5 @@ node_modules/
 output/source/env/*.npy
 output/source/bake/*.exr
 output/source/bake/*.raw
+# PDF derlemesinin geçici sayfası (build_pdf.mjs siler; yarıda kalırsa depoya girmesin)
+output/docs/_build.html

@@ -68,4 +68,9 @@ Yeniden üretim (Python 3.11 + `pip install bpy pymupdf shapely scipy pillow`, K
   - `scripts/kiosk_soak.mjs <url> 30 1920x1080`: kiosk dayanıklılığı.
   - `scripts/bench.mjs`: performans.
 
+**Teknik dokümantasyon (PDF)**
+- `../docs/dokuman.html` → `../docs/Supremo85_3B_teknik_dokumantasyon.pdf`: `node ../docs/build_pdf.mjs` (Chromium + PyMuPDF; playwright-core başka klasördeyse `PW_MODULES=<klasör>`).
+  - Boyut, satır sayısı, sürüm ve commit listesi derleme sırasında dosyalardan ve git'ten doldurulur; içindekiler iki geçişte sayfalanır.
+- Ekran görüntüleri `../docs/shots.mjs` (→ `docs/img/`), bütçe tablosu `../docs/budget.mjs` ile alınır; ikisi de yerel sunucudaki siteye bağlanır.
+
 Not: Teknik dökümanın (`reference/Supremo85_teknik_dokuman.pdf`) ve ift Rosenheim Uf test belgesinin (`reference/Supremo8500_ift_Uf_sertifika.pdf`) kopyaları yalnızca yerelde tutulur, depoya eklenmez. Görüntüleyicideki performans değerleri (`viewer-kose/js/parts-data.js` → `PERFORMANCE`) yalnızca bu belgeden alınır.

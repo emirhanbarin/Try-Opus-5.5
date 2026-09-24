@@ -1,0 +1,871 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Supremo 85 3B Görüntüleyici — Teknik Dokümantasyon</title>
+<!-- Derleme: build_pdf.mjs. {{...}} yer tutucuları derleme sırasında dosyalardan doldurulur (boyut, satır, commit). -->
+<style>
+{{FONTS}}
+@page { size: A4; margin: 16mm 16mm 18mm 16mm; }
+:root { --ink: #18202c; --muted: #566273; --faint: #8a95a4; --line: #d9e0e8; --soft: #f3f6f9; --accent: #1377b5; --accent-soft: #e8f3fb; --warm: #c46a00; --warm-soft: #fff6e8; }
+* { box-sizing: border-box; }
+html { font-family: 'Inter', 'DejaVu Sans', sans-serif; font-size: 9.5pt; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { margin: 0; line-height: 1.5; font-feature-settings: 'tnum' 0; }
+h1, h2, h3 { font-weight: 700; letter-spacing: -.01em; color: #0f1720; }
+/* bölümler akış içinde başlar (yalnız 1. bölüm içindekilerden sonra yeni sayfada); sayfa başındaki üst boşluk tarayıcıca kesilir */
+h1 { font-size: 19pt; margin: 26pt 0 10pt; padding-bottom: 7pt; border-bottom: 1.2pt solid var(--accent); break-after: avoid; }
+#s1 { break-before: page; margin-top: 0; }
+h1 .num { color: var(--accent); margin-right: 8pt; }
+h2 { font-size: 12.5pt; margin: 15pt 0 5pt; break-after: avoid; }
+h3 { font-size: 10.2pt; margin: 11pt 0 3pt; break-after: avoid; color: #223043; }
+p { margin: 0 0 6pt; orphans: 3; widows: 3; }
+/* tabloyu, görseli ya da kodu tanıtan paragraf onunla aynı sayfada kalsın */
+p:has(+ table, + figure, + .grid2, + .grid3, + svg, + pre) { break-after: avoid; }
+ul, ol { margin: 0 0 7pt; padding-left: 15pt; }
+li { margin: 0 0 2.5pt; }
+strong { font-weight: 650; }
+a { color: var(--accent); text-decoration: none; }
+code { font-family: 'DejaVu Sans Mono', monospace; font-size: 8pt; background: var(--soft); border: .4pt solid #e3e8ee; border-radius: 2.5pt; padding: 0 2.5pt; }
+pre { font-family: 'DejaVu Sans Mono', monospace; font-size: 7.6pt; line-height: 1.42; background: #f6f8fb; border: .5pt solid #dfe5ec; border-radius: 4pt; padding: 7pt 9pt; margin: 4pt 0 9pt; white-space: pre-wrap; break-inside: avoid; }
+pre code { background: none; border: 0; padding: 0; font-size: inherit; }
+table { width: 100%; border-collapse: collapse; margin: 4pt 0 10pt; font-size: 8.4pt; break-inside: avoid; }
+table.long { break-inside: auto; }                 /* uzun tablolar sayfa arasında bölünebilir (başlık satırı yinelenir) */
+thead { display: table-header-group; }
+tr { break-inside: avoid; }
+th { text-align: left; font-weight: 650; background: #edf2f7; color: #243244; border-bottom: .8pt solid #c5d0dc; padding: 4pt 5pt; }
+td { border-bottom: .5pt solid var(--line); padding: 3.4pt 5pt; vertical-align: top; }
+td.r, th.r { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+td.c { white-space: nowrap; }
+.src { display: inline-block; font-size: 7.2pt; font-weight: 650; color: var(--accent); background: var(--accent-soft); border-radius: 2.5pt; padding: 0 3pt; white-space: nowrap; }
+figure { margin: 6pt 0 11pt; break-inside: avoid; }
+figure img { display: block; width: 100%; border-radius: 3pt; border: .5pt solid #cfd7e1; }
+figcaption { font-size: 7.8pt; color: var(--muted); margin-top: 3pt; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8pt; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7pt; }
+.grid2 figure, .grid3 figure { margin: 0 0 6pt; }
+.note { border-left: 2.4pt solid var(--accent); background: var(--accent-soft); padding: 5pt 9pt; margin: 6pt 0 10pt; border-radius: 0 3pt 3pt 0; break-inside: avoid; }
+.note.warn { border-left-color: var(--warm); background: var(--warm-soft); }
+.note p:last-child { margin-bottom: 0; }
+.lead { font-size: 10.4pt; color: #2a3646; }
+.kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6pt; margin: 6pt 0 11pt; }
+.kpi div { border: .5pt solid var(--line); border-radius: 4pt; padding: 6pt 8pt; background: #fbfcfd; }
+.kpi b { display: block; font-size: 14pt; color: #0f1720; letter-spacing: -.01em; }
+.kpi span { font-size: 7.6pt; color: var(--muted); }
+svg.diag { display: block; width: 100%; height: auto; margin: 4pt 0 2pt; }
+svg.diag text { font-family: 'Inter', sans-serif; }
+.avoid { break-inside: avoid; }
+.muted { color: var(--muted); }
+.small { font-size: 8.2pt; }
+
+/* kapak */
+.cover { width: 210mm; height: 297mm; background: #0d1218; color: #e8edf2; position: relative; overflow: hidden; }
+.cover .top { padding: 26mm 20mm 0; }
+.cover .kicker { font-size: 9pt; letter-spacing: .28em; font-weight: 700; color: #5cc8ff; }
+.cover h1 { break-before: auto; border: 0; font-size: 34pt; line-height: 1.05; color: #fff; margin: 7mm 0 4mm; padding: 0; letter-spacing: -.02em; }
+.cover .sub { font-size: 14pt; color: #b9c6d4; font-weight: 500; }
+.cover .desc { margin-top: 5mm; font-size: 9.6pt; color: #8f9cab; max-width: 150mm; }
+.cover .hero { position: absolute; left: 0; right: 0; top: 104mm; height: 150mm; background: url('img/00_kapak.jpg') center / cover no-repeat; }
+.cover .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, #0d1218 0%, rgba(13, 18, 24, 0) 22%, rgba(13, 18, 24, 0) 70%, #0d1218 100%); }
+.cover .meta { position: absolute; left: 20mm; right: 20mm; bottom: 16mm; display: flex; justify-content: space-between; font-size: 8.6pt; color: #8f9cab; border-top: .5pt solid #2a3542; padding-top: 4mm; }
+.cover .meta b { color: #d7e1ea; font-weight: 600; }
+
+/* içindekiler */
+#toc h1 { margin-top: 0; }
+#toc ol { list-style: none; padding: 0; margin: 0; columns: 2; column-gap: 9mm; }
+#toc li { display: flex; align-items: baseline; gap: 6pt; margin: 0; padding: 2.6pt 0; border-bottom: .4pt dotted #cfd7e1; break-inside: avoid; }
+#toc li.l1 { font-weight: 650; font-size: 10pt; padding-top: 6pt; break-after: avoid; }
+#toc li.l2 { padding-left: 14pt; font-size: 8.8pt; color: #334255; }
+#toc li a { color: inherit; flex: 1; }
+#toc li .pg { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 18pt; text-align: right; }
+#toc li .tn { display: inline-block; min-width: 20pt; font-variant-numeric: tabular-nums; }
+#toc li.l1 .tn { color: var(--accent); }
+#toc li.l2 .tn { min-width: 26pt; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- ================================================================ KAPAK -->
+<section class="cover" id="kapak">
+  <div class="top">
+    <div class="kicker">SUPREMO 85 · 8500 SERİSİ</div>
+    <h1>3B Profil Görüntüleyici</h1>
+    <div class="sub">Teknik dokümantasyon · geliştirici kılavuzu</div>
+    <p class="desc">Veri hattı, görüntüleyici mimarisi, gölgelendiriciler, mühendislik modülleri (ısı haritası, canlı kesit, ölçüm, köşeden pencereye), performans bütçesi, testler ve yeniden üretim adımları.</p>
+  </div>
+  <div class="hero"></div>
+  <div class="meta"><span>Sürüm <b>{{VERSION}}</b></span><span>Tarih <b>{{DATE}}</b></span><span>Dil <b>Türkçe</b></span></div>
+</section>
+
+<!-- ================================================================ İÇİNDEKİLER -->
+<section id="toc">
+  <h1>İçindekiler</h1>
+  <ol id="tocList"></ol>
+</section>
+
+<!-- ================================================================ 1 -->
+<h1 id="s1"><span class="num">1</span>Genel bakış</h1>
+<p class="lead">Supremo 85 (8500 serisi) uPVC pencere sisteminin iki etkileşimli 3B numunesini tarayıcıda gösteren, internet gerektirmeyen ve fuar ekranında gözetimsiz çalışabilen bir site. Bu belge sitenin nasıl üretildiğini, nasıl çalıştığını, nasıl test edildiğini ve nasıl yeniden üretileceğini anlatır.</p>
+
+<h2 id="s1-1">1.1 Kapsam</h2>
+<table>
+  <thead><tr><th>Sayfa</th><th>İçerik</th><th class="r">Parça</th><th class="r">Üçgen</th><th class="r">Çizim çağrısı</th></tr></thead>
+  <tbody>
+    <tr><td class="c"><strong>Köşe kesiti</strong><br><code>index.html</code> (açılış)</td><td>45° kaynaklı köşe numunesi, 2 × 300 mm kol. Keşif turu, 360° döner tabla, dört eksende kesit, su tahliyesi, teknik çizim bindirme, renk/folyo ve karşılaştırma perdesi, üretim hikâyesi, röntgen merceği, kamara sayacı, ısı haritası, canlı 2B kesit, ölçüm, köşeden pencereye yapılandırıcı, kiosk modu.</td><td class="r">26</td><td class="r">84.880</td><td class="r">27</td></tr>
+    <tr><td class="c"><strong>Düz kesit</strong><br><code>kesit.html</code></td><td>300 mm düz numune (önceki sürüm). Köşe çalışmaları sırasında yalnızca sayfa geçişi, kiosk dönüşü ve adres parametrelerinin taşınması eklendi.</td><td class="r">22</td><td class="r">74.738</td><td class="r">23</td></tr>
+  </tbody>
+</table>
+<div class="grid2">
+  <figure><img src="img/01_kose_acilis.jpg"><figcaption>Köşe kesiti, açılış görünümü (1600 × 900).</figcaption></figure>
+  <figure><img src="img/17_duz_kesit.jpg"><figcaption>Düz kesit sayfası.</figcaption></figure>
+</div>
+
+<h2 id="s1-2">1.2 Tasarım kuralları</h2>
+<p>Aşağıdaki kurallar projenin başından beri sabittir; her yeni özellik bunlara göre tasarlandı ve testlerle denetlenir.</p>
+<table>
+  <thead><tr><th style="width:26%">Kural</th><th>Uygulama</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Çevrimdışı</strong></td><td>three.js dahil her dosya yereldir. Test, sayfanın hiçbir harici adrese istek atmadığını denetler.</td></tr>
+    <tr><td><strong>Sunucusuz açılış</strong></td><td><code>index.html</code>'e çift tıklamak (file://) yeterlidir. Tarayıcı yerel dosya okumayı engellediği için ikili varlıklar <code>assets/kose/assets-embedded.js</code> içine data: URL olarak gömülür (bkz. 3.6).</td></tr>
+    <tr><td><strong>Performans bütçesi</strong></td><td>Her durumda &lt; 150.000 üçgen ve &lt; 50 çizim çağrısı; dokular en çok 2048 piksel ve KTX2; ağır son işlem (post-processing) ve gerçek zamanlı gölge yok.</td></tr>
+    <tr><td><strong>Ölçü uydurmama</strong></td><td>Arayüzdeki her ölçünün kaynağı döküman sayfasıdır (<span class="src">s.9</span> gibi). Döküman vermeyen değerler "varsayım" ya da "gösterim amaçlı" diye etiketlenir ve Teknik özellikler kartında listelenir.</td></tr>
+    <tr><td><strong>Arayüz</strong></td><td>Yalnızca Türkçe. Marka tarafsızdır: ürün adı görünür, üretici adı görünmez.</td></tr>
+    <tr><td><strong>Gözetimsiz çalışma</strong></td><td>Kiosk modu: boşta tanıtım döngüsü, dokunmatik hedefler, kendini toparlama (bkz. 4.9).</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s1-3">1.3 Teknoloji yığını</h2>
+<table>
+  <thead><tr><th style="width:20%">Katman</th><th style="width:34%">Araç</th><th>Kullanım</th></tr></thead>
+  <tbody>
+    <tr><td>Kaynak veri</td><td>PyMuPDF, Shapely, NumPy, SciPy</td><td>PDF vektörlerinden kesit poligonları; ısı hesabı (<code>spsolve</code>), uç nokta eşleme (<code>cKDTree</code>).</td></tr>
+    <tr><td>3B modelleme</td><td>Blender 5.0 (<code>bpy</code> 5.0.1, arayüzsüz), bmesh, Cycles</td><td>Numuneler, montaj denetimi, AO pişirme, stüdyo HDRI, önizleme renderları.</td></tr>
+    <tr><td>Varlık sıkıştırma</td><td>gltf-transform (meshopt), KTX-Software 4.3</td><td>Geometri nicemleme ve sıkıştırma; Basis (ETC1S), RGBA16F ve R16F + zstd dokular.</td></tr>
+    <tr><td>Görüntüleyici</td><td>three.js r186 (özel alt küme), three-mesh-bvh, esbuild</td><td>WebGL 2 PBR görüntü, BVH ışın izleme ve düzlem kesişimi, tek dosyalık IIFE paket.</td></tr>
+    <tr><td>Test</td><td>playwright-core 1.63 + Chromium, Xvfb, Node</td><td>Yazılımsal GL üzerinde uçtan uca tarayıcı testleri; tarayıcısız hesap testleri.</td></tr>
+    <tr><td>Dağıtım</td><td>Python / Node / PowerShell / Perl statik sunucular</td><td>Çift tıklanan başlatıcılar (<code>.bat</code>, <code>.command</code>) ve kiosk başlatıcıları.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s1-4">1.4 Depo yerleşimi</h2>
+<pre><code>output/
+├─ site/                    dağıtılan site (teslim ZIP'inin içeriği)
+│  ├─ index.html · css/kose.css · js/kose.js      köşe kesiti
+│  ├─ kesit.html · css/style.css · js/app.js      düz kesit (style.css ortak yazı tipi ve bileşenler)
+│  ├─ assets/ · assets/kose/                      GLB, KTX2 dokular ve file:// için gömülü kopyalar
+│  ├─ vendor/basis/                               KTX2 (Basis) dönüştürücü
+│  └─ başlat.* · kiosk-başlat.* · sunucu.*        başlatıcılar ve yerel sunucular
+├─ source/                  üretim hattı (sunulmaz, yeniden üretim için)
+│  ├─ scripts/              Python (bpy dahil) ve Node betikleri, testler
+│  ├─ viewer/               düz kesit görüntüleyici kaynakları
+│  ├─ viewer-kose/          köşe görüntüleyici kaynakları: js/, vendor/, build.sh, embed_assets.py
+│  ├─ section_mm.json · kose_info.json · water_path.json · thermal_check.json
+│  ├─ bake/ · env/ · tex/   ara çıktılar (AO, HDRI, desenler, ısı önizlemesi)
+│  └─ reference/            bindirme görselleri (döküman ve sertifika PDF'leri depoda tutulmaz)
+└─ docs/                    bu belge: dokuman.html, img/, shots.mjs, budget.mjs, build_pdf.mjs, pdf_post.py</code></pre>
+
+<!-- ================================================================ 2 -->
+<h1 id="s2"><span class="num">2</span>Kaynak veriler</h1>
+<p>Görüntüleyicideki geometri ve teknik bilgi iki belgeden gelir: 32 sayfalık teknik üretim dökümanı ve ift Rosenheim test belgesi. İki belge de yalnızca yerelde tutulur (<code>source/reference/</code>, <code>.gitignore</code>).</p>
+
+<h2 id="s2-1">2.1 Teknik döküman: sayfa kullanımı</h2>
+<table class="long">
+  <thead><tr><th style="width:8%">Sayfa</th><th style="width:40%">İçerik</th><th>Projede kullanıldığı yer</th></tr></thead>
+  <tbody>
+    <tr><td class="c">s.4</td><td>Aksesuarlar</td><td>Drenaj kapağı (rüzgarlık) parçası.</td></tr>
+    <tr><td class="c">s.5</td><td>Kesim ölçüleri tablosu (kasadan kasaya: kasa +6, kanat −74, kanat içi cam −202 …)</td><td>Yapılandırıcının kesim listesi; üretim hikâyesinin kesim adımı.</td></tr>
+    <tr><td class="c">s.6</td><td>Profil kesimi (45°)</td><td>Köşe gönyesi; hikâye adım 1.</td></tr>
+    <tr><td class="c">s.7</td><td>Çıta kesimi</td><td>Cam çıtası birleşimi.</td></tr>
+    <tr><td class="c">s.8</td><td>Su tahliyesi: yarık düzeni 10 · 32 · 70 · 32 mm, 32 × Ø4 mm, adet tablosu (C'ye göre 1–4), eğik yarık</td><td>Drenaj yarıkları, su animasyonu, yapılandırıcının kanal adedi.</td></tr>
+    <tr><td class="c">s.9</td><td>Kesit çizimi (vektör) ve su okları</td><td>Tüm kesit geometrisi, kamara sayısı (14/11), su yolu, çizim bindirme, ısı hesabı.</td></tr>
+    <tr><td class="c">s.10</td><td>Kasa hazırlığı: takviye A − 153, 3,9 × 19 YSB vida, uçtan 150 mm, ara 300–400 mm</td><td>Kasa takviyesi ve vidaları; yapılandırıcı.</td></tr>
+    <tr><td class="c">s.11</td><td>Kanat aksesuarları: takviye A − 160, 3,9 × 19 YHB vida, kol mili kanat kenarından 33 mm, kanat drenaj adedi (1–3)</td><td>Kanat takviyesi ve vidaları; kol konumu; yapılandırıcı.</td></tr>
+    <tr><td class="c">s.14</td><td>Kaynak kuralları: 240–280 °C, destek plakaları</td><td>Hikâyenin kaynak adımı; kaynak bilgi işareti.</td></tr>
+    <tr><td class="c">s.17</td><td>Menteşe adedi (A &lt; 1100: 2 · 1101–1400: 3 · &gt; 1400: 4), yerleşim 165 / 350 / eşit, kol A/2</td><td>Yapılandırıcı (içe açılır).</td></tr>
+    <tr><td class="c">s.24</td><td>Çift açılım donanımı: GRM ispanyolet ve OR makas aralıkları ve kodları</td><td>Yapılandırıcı (çift açılım).</td></tr>
+    <tr><td class="c">s.32</td><td>Vida tablosu (3,9 × 22 YSB, 3,9 × 25 YHB)</td><td>"Döküman içi fark" notu (s.10/s.11 ile farklı boylar).</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s2-2">2.2 ift Rosenheim test belgesi</h2>
+<p>Belge 25-002770-PR01 (NW-K20-06-en-01), 28.11.2025: profil ısı geçirgenliği <strong>Uf = 1,0 W/(m²K)</strong>, EN 12412-2:2003-07. Test camın yerine yalıtım paneliyle yapılmıştır. Belgedeki profil kodları: kasa BF 8581 (74 × 85 mm), kanat BF 8582 (84 × 85 mm), takviye BF 409-15 (30 × 27 mm). Bu değerler <code>parts-data.js</code> → <code>PERFORMANCE</code> içindedir ve Teknik özellikler kartında, başlıktaki rozette ve ısı haritası açıklamasında kaynağıyla gösterilir.</p>
+
+<h2 id="s2-3">2.3 Kesit geometrisinin çıkarılması</h2>
+<p>s.9'daki kesit çizimi vektördür; geometri ölçülmez, doğrudan çizim komutlarından okunur.</p>
+<ol>
+  <li><strong>Okuma</strong> (<code>extract.py</code>): PyMuPDF ile sayfanın çizim komutları; her komut renk ve çizim sırasıyla birlikte bir parça dizisine dönüşür. Ölçek <strong>1 / 3,0082 mm/pt</strong>, dökümandaki ölçü çizgilerinden kalibre edilir ve 85 · 104,5 · 124 · 74 · 84 · 40 · 32 mm ölçüleriyle doğrulanır.</li>
+  <li><strong>Profiller</strong> (<code>extract2.py</code>, <code>build2d.py</code>): siyah çizgiler; uç noktalar 0,06 mm içinde birleştirilir (<code>cKDTree</code>), bağlı bileşenlere ayrılır, vida çizimleri dışlanır, <code>polygonize</code> ile kapalı poligonlar (delikli) kurulur.</li>
+  <li><strong>Diğer parçalar</strong> (<code>extract3.py</code>): contalar, takviyeler, çıta dudakları, takoz köprüsü, ara çıtalar ve sızdırmazlık, renk ve çizim sırası gruplarından.</li>
+  <li><strong>Son işlem</strong> (<code>final2d.py</code>): köşe yuvarlatma (profiller 0,2 mm, contalar 0,08–0,1 mm), 0,003 mm sadeleştirme, yön düzeltme (dış halka saat yönü tersine, delikler saat yönünde); camlar çizimdeki çizgilerden tam dikdörtgen.</li>
+</ol>
+<p>Çıktı <code>section_mm.json</code>: 21 poligon (kasa 14 delikli, kanat 11 delikli, çıta, iki takviye, dört conta, iki çıta dudağı, takoz köprüsü, iki ara çıta ve nem alıcıları, iki sızdırmazlık, üç cam). Koordinat sistemi: <strong>sx</strong> derinlik (0 = kasa dış yüzü, oda tarafına doğru artar), <strong>sy</strong> yükseklik (0 = kasa dış kenarı). Köşe modelinde <code>Z = sx − 52,25 mm</code>, alt kolda <code>Y = sy</code>, yan kolda <code>X = sy</code>.</p>
+<div class="grid2">
+  <figure><img src="img/r1_kesit_2d_bindirme.jpg"><figcaption>Denetim: <code>section_mm.json</code> poligonları (renkli) s.9 çizim çizgileri üzerinde.</figcaption></figure>
+  <figure><img src="img/r2_kose_3d_bindirme.jpg"><figcaption>Denetim: 3B modelin uç kesiti aynı çizimle; su okları s.9'dan.</figcaption></figure>
+</div>
+
+<!-- ================================================================ 3 -->
+<h1 id="s3"><span class="num">3</span>Üretim hattı</h1>
+<p>Kaynak verilerden sitenin dosyalarına giden yol tamamen betiklerle tekrarlanabilir. Blender arayüzü kullanılmaz; <code>bpy</code> Python modülü olarak çalışır.</p>
+<svg class="diag" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5a6b80"/></marker></defs>
+  <g font-size="10.5" fill="#18202c">
+    <g stroke="#9fb3c8" stroke-width="1" fill="#f3f7fb">
+      <rect x="6" y="20" width="126" height="54" rx="7"/><rect x="152" y="20" width="126" height="54" rx="7"/><rect x="298" y="20" width="136" height="54" rx="7"/>
+      <rect x="454" y="20" width="118" height="54" rx="7"/><rect x="592" y="20" width="122" height="54" rx="7"/>
+    </g>
+    <text x="69" y="42" text-anchor="middle" font-weight="700">Teknik döküman</text><text x="69" y="58" text-anchor="middle" font-size="9" fill="#566273">s.9 vektör, s.5–s.32</text>
+    <text x="215" y="42" text-anchor="middle" font-weight="700">section_mm.json</text><text x="215" y="58" text-anchor="middle" font-size="9" fill="#566273">21 poligon (PyMuPDF)</text>
+    <text x="366" y="42" text-anchor="middle" font-weight="700">Blender · bpy</text><text x="366" y="58" text-anchor="middle" font-size="9" fill="#566273">build_model / build_corner</text>
+    <text x="513" y="42" text-anchor="middle" font-weight="700">Montaj denetimi</text><text x="513" y="58" text-anchor="middle" font-size="9" fill="#566273">2B temas + 3B BVH</text>
+    <text x="653" y="42" text-anchor="middle" font-weight="700">AO pişirme</text><text x="653" y="58" text-anchor="middle" font-size="9" fill="#566273">Cycles, UV atlası</text>
+    <g stroke="#5a6b80" stroke-width="1.3" fill="none" marker-end="url(#ar)">
+      <path d="M132 47H150"/><path d="M278 47H296"/><path d="M434 47H452"/><path d="M572 47H590"/>
+      <path d="M653 74V112"/><path d="M215 74V112"/><path d="M69 74V112"/>
+    </g>
+    <g stroke="#9fb3c8" stroke-width="1" fill="#f3f7fb">
+      <rect x="6" y="114" width="200" height="62" rx="7"/><rect x="226" y="114" width="200" height="62" rx="7"/><rect x="514" y="114" width="200" height="62" rx="7"/>
+    </g>
+    <text x="106" y="136" text-anchor="middle" font-weight="700">Türetilen veriler</text><text x="106" y="152" text-anchor="middle" font-size="9" fill="#566273">çizim, su yolu, halkalar, kamaralar</text><text x="106" y="165" text-anchor="middle" font-size="9" fill="#566273">extract_*.py</text>
+    <text x="326" y="136" text-anchor="middle" font-weight="700">Isı hesabı</text><text x="326" y="152" text-anchor="middle" font-size="9" fill="#566273">thermal_section.py (EN ISO 10077-2)</text><text x="326" y="165" text-anchor="middle" font-size="9" fill="#566273">isi.ktx2 · thermal_check.json</text>
+    <text x="614" y="136" text-anchor="middle" font-weight="700">GLB + KTX2</text><text x="614" y="152" text-anchor="middle" font-size="9" fill="#566273">meshopt, 16 bit nicemleme</text><text x="614" y="165" text-anchor="middle" font-size="9" fill="#566273">AO · HDRI · ahşap · galvaniz</text>
+    <g stroke="#9fb3c8" stroke-width="1" fill="#eaf4fb">
+      <rect x="170" y="212" width="236" height="62" rx="7"/><rect x="450" y="212" width="264" height="62" rx="7"/>
+    </g>
+    <text x="288" y="234" text-anchor="middle" font-weight="700">Görüntüleyici kaynakları</text><text x="288" y="250" text-anchor="middle" font-size="9" fill="#566273">viewer-kose/js (ES modülleri)</text><text x="288" y="263" text-anchor="middle" font-size="9" fill="#566273">build.sh → esbuild → js/kose.js</text>
+    <text x="582" y="234" text-anchor="middle" font-weight="700">site/</text><text x="582" y="250" text-anchor="middle" font-size="9" fill="#566273">http · file:// (assets-embedded.js) · kiosk</text><text x="582" y="263" text-anchor="middle" font-size="9" fill="#566273">başlatıcılar, sunucular, README</text>
+    <g stroke="#5a6b80" stroke-width="1.3" fill="none" marker-end="url(#ar)">
+      <path d="M106 176V243H168"/><path d="M326 176V210"/><path d="M406 243H448"/><path d="M614 176V210"/>
+    </g>
+    <path d="M366 74V96H215" stroke="#5a6b80" stroke-width="1.3" fill="none" stroke-dasharray="3 3"/>
+    <text x="372" y="92" font-size="8.5" fill="#566273">kose_info.json (yarık, vida, takviye konumları)</text>
+  </g>
+</svg>
+<p class="small muted">Şekil 3.1 · Veri hattı. Düz çizgiler dosya akışını, kesikli çizgi yardımcı veriyi gösterir.</p>
+
+<h2 id="s3-1">3.1 Modelleme (Blender)</h2>
+<p><code>build_model.py</code> düz numuneyi (22 obje), <code>build_corner.py</code> köşe numunesini (26 obje) kurar. Her iki betik de kesit poligonlarını <code>section_mm.json</code>'dan okur; ölçüler betiğin içinde sayfa referanslıdır.</p>
+<ul>
+  <li><strong>Gönye boolean'sız kurulur.</strong> <code>miter_L()</code>, her kesit halkasının her noktası için üç köşe noktası üretir: gönye düzleminde ortak nokta <em>M</em> (X = Y = sy), alt kolun serbest ucunda <em>S</em> (X = 300) ve yan kolun serbest ucunda <em>J</em> (Y = 300). M–S ve M–J yüzleri tek bir kapalı katı oluşturur; kaynaklı profil gerçekteki gibi tek parçadır, gönyede çakışan ya da açık yüz kalmaz. Serbest uçlar kapaklanır.</li>
+  <li><strong>Yarıklar</strong> s.8/s.11 düzenindedir: iç köşe referansından 10 mm, 32 mm yarık, 70 mm ara, 32 mm yarık; eğik yarık kasada 50°, kanatta 60°.</li>
+  <li><strong>Takviyeler</strong> iki uçtan eşit geri çekilir (kasada A − 153 → 76,5 mm); <strong>vidalar</strong> kasada 3,9 × 19 YSB silindir baş, uçtan 150 mm; kanatta 3,9 × 19 YHB havşa baş, iç köşeden 120 mm. Silindir baş ölçüsü DIN 7504-N'den alınır (döküman baş ölçüsü vermez).</li>
+  <li>Çıktılar: <code>supremo85_kose.blend</code> ve <code>kose_info.json</code> (yarık merkezleri D-E 100, C 202, B 128, A 230 mm; vidalar 150 / 222 mm; takviye başlangıçları).</li>
+</ul>
+
+<h2 id="s3-2">3.2 Montaj denetimi</h2>
+<p><code>check_assembly.py</code> iki düzeyde denetler: 2B'de kesit poligonları arasındaki temas çiftleri (aralık ≤ 0,05 mm) ve gömülme derinliği; 3B'de Blender BVH ağaçlarıyla üçgen kesişimi ve en yakın mesafe. <code>assembly_report.py</code> sonuçları <code>montaj_denetimi_kose.md</code>'ye yazar.</p>
+<table>
+  <thead><tr><th>Bulgu</th><th>Değer</th><th>Yorum</th></tr></thead>
+  <tbody>
+    <tr><td>En büyük gömülme</td><td class="c">0,051 mm</td><td>Kanat iç contasının tırnak ayağı yuvasına sıkı geçer; çizim çizgi kalınlığının (0,17 mm) altında.</td></tr>
+    <tr><td>Diğer temaslar</td><td class="c">≤ 0,005 mm</td><td>Sayısal gürültü düzeyi.</td></tr>
+    <tr><td>Vidalar</td><td class="c">0,0005–0,0116 mm</td><td>Delikler vida zarfıyla açıldığından PVC ve çelikle kesişim yok.</td></tr>
+    <tr><td>Takviyeler</td><td class="c">0,5 mm</td><td>Kamaralarına montaj boşluğuyla oturur; boşluk çizimde de vardır.</td></tr>
+    <tr><td>Gönye</td><td class="c">—</td><td>Köşedeki temas çiftleri düz numunedekilerle aynı; gönyeden yeni çakışma yok.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s3-3">3.3 AO pişirme ve dışa aktarım</h2>
+<p><code>bake_ao.py</code> (<code>CORNER=1</code>) tek bir UV atlası açar: gönyede UV dikişi açılır, uzun kollar kendi eksenlerinde ×0,25 sıkıştırılır. Cycles iki AO pişirir ve tek dokuya paketler:</p>
+<ul>
+  <li><strong>R kanalı:</strong> montaj AO'su (komşu parçaların gölgesi dahil); normal görünümde kullanılır.</li>
+  <li><strong>A kanalı:</strong> parça-içi AO; patlatma, gizleme ya da hayalet görünümde komşu gölgeler yanlış kalacağı için shader bu kanala geçer (<code>uAoMix</code>).</li>
+  <li><strong>İkinci UV (<code>uv1.x</code>):</strong> folyo maskesi; dış kontur yan yüzleri 1, uç kesit ve kamara duvarları 0 (beyaz PVC çekirdek).</li>
+</ul>
+<p>Sıkıştırılmamış GLB <code>gltf-transform meshopt</code> ile 16 bit konum, 12 bit normal ve 14 bit UV nicemlemesiyle sıkıştırılır: <code>supremo85_kose.glb</code> {{KB:site/assets/kose/supremo85_kose.glb}}.</p>
+
+<h2 id="s3-4">3.4 Dokular</h2>
+<table>
+  <thead><tr><th>Dosya</th><th>Biçim</th><th class="r">Boyut</th><th>Görev</th></tr></thead>
+  <tbody>
+    <tr><td><code>kose/ao_kose.ktx2</code></td><td>2048², Basis ETC1S</td><td class="r">{{KB:site/assets/kose/ao_kose.ktx2}}</td><td>AO atlası (R montaj, A parça)</td></tr>
+    <tr><td><code>kose/studio2.ktx2</code></td><td>1024 × 512 RGBA16F</td><td class="r">{{KB:site/assets/kose/studio2.ktx2}}</td><td>Stüdyo HDRI v2: Blender'da modellenmiş stüdyonun Cycles panoraması (<code>render_studio_hdri.py</code>); PMREM ortam haritası</td></tr>
+    <tr><td><code>kose/ahsap.ktx2</code></td><td>2048 × 512</td><td class="r">{{KB:site/assets/kose/ahsap.ktx2}}</td><td>Döşenebilir prosedürel ahşap folyo deseni (<code>make_wood_decor.py</code>)</td></tr>
+    <tr><td><code>spangle.ktx2</code></td><td>1024²</td><td class="r">{{KB:site/assets/spangle.ktx2}}</td><td>Galvaniz çiçeklenme deseni (<code>make_spangle.py</code>); iki sayfada ortak</td></tr>
+    <tr><td><code>kose/isi.ktx2</code></td><td>535 × 705 R16F + zstd</td><td class="r">{{KB:site/assets/kose/isi.ktx2}}</td><td>Isı haritası, T / 20 °C (bkz. 6.1)</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s3-5">3.5 Görüntüleyiciye gömülen veriler</h2>
+<table>
+  <thead><tr><th style="width:27%">Betik</th><th style="width:30%">Çıktı</th><th>Kullanım</th></tr></thead>
+  <tbody>
+    <tr><td><code>extract_drawing_lines.py</code></td><td><code>drawing-data.js</code></td><td>s.9 çizim çizgileri; uç kesitte 1:1 teknik çizim bindirme.</td></tr>
+    <tr><td><code>extract_water_path.py</code></td><td><code>water-path.js</code>, <code>water_path.json</code></td><td>s.9'daki 42 su okundan 3B tahliye yolu; kesit poligonlarına göre denetlenir.</td></tr>
+    <tr><td><code>extract_rings.py</code></td><td><code>rings-data.js</code>, <code>chambers-data.js</code></td><td>0,05 mm sadeleştirilmiş dış konturlar (kaynak taşıntısı, tam pencere süpürmesi); kasa 14 ve kanat 11 kamara.</td></tr>
+    <tr><td><code>thermal_section.py</code></td><td><code>isi.ktx2</code>, <code>thermal-data.js</code>, <code>thermal_check.json</code></td><td>Isı haritası dokusu, doku kutusu, doğrulama raporu.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s3-6">3.6 Derleme ve file:// desteği</h2>
+<ul>
+  <li><strong><code>build-vendor.sh</code></strong>: <code>vendor-entry.js</code>'de listelenen three.js r186 alt kümesini ve eklentileri (OrbitControls, GLTFLoader, KTX2Loader, MeshoptDecoder, three-mesh-bvh) <code>vendor/three-bundle.min.js</code>'e paketler. Yeni bir three.js sınıfı kullanılacaksa önce buraya eklenir.</li>
+  <li><strong><code>build.sh</code></strong>: <code>js/main.js</code> → <code>site/js/kose.js</code> (esbuild, IIFE, es2019, küçültülmüş; <code>import.meta.url</code> → <code>document.baseURI</code>). Ardından <code>embed_assets.py</code> GLB'yi, KTX2 dokuları ve Basis dönüştürücüsünü base64 data: URL olarak <code>assets/kose/assets-embedded.js</code>'e yazar ({{KB:site/assets/kose/assets-embedded.js}}).</li>
+  <li><strong>Açılışta</strong> sayfa file:// ile açıldıysa <code>setupFileProtocol()</code> bu klasik betiği yükler ve <code>LoadingManager.setURLModifier</code> tüm varlık isteklerini gömülü data: URL'lere yönlendirir; http'de normal dosyalar yüklenir. İki yol da testte ayrı ayrı çalıştırılır.</li>
+</ul>
+
+<!-- ================================================================ 4 -->
+<h1 id="s4"><span class="num">4</span>Görüntüleyici mimarisi</h1>
+<p>Köşe görüntüleyicisi <code>source/viewer-kose/js/</code> altındaki ES modüllerinden oluşur. <code>main.js</code> çekirdektir (durum, render döngüsü, kamera, kesit, seçim, arayüz); özellikler ayrı modüllerdedir ve çekirdeğe küçük bir <code>app</code> arayüzüyle bağlanır.</p>
+<svg class="diag" viewBox="0 0 720 330" xmlns="http://www.w3.org/2000/svg">
+  <g font-size="10" fill="#18202c">
+    <rect x="250" y="120" width="220" height="86" rx="9" fill="#eaf4fb" stroke="#7fb3d9" stroke-width="1.2"/>
+    <text x="360" y="143" text-anchor="middle" font-weight="700" font-size="11.5">main.js · çekirdek</text>
+    <text x="360" y="160" text-anchor="middle" font-size="8.8" fill="#465569">durum · render döngüsü · kamera ve çerçeveleme</text>
+    <text x="360" y="174" text-anchor="middle" font-size="8.8" fill="#465569">kesit düzlemi · seçim (BVH) · patlatma · arayüz</text>
+    <text x="360" y="192" text-anchor="middle" font-size="8.8" fill="#1377b5">app { onFrame, requestRender, setView, setClip … }</text>
+    <rect x="276" y="250" width="168" height="44" rx="7" fill="#fff6e8" stroke="#e0b070"/>
+    <text x="360" y="268" text-anchor="middle" font-weight="700">materials.js</text><text x="360" y="282" text-anchor="middle" font-size="8.6" fill="#6a5a40">PBR + onBeforeCompile yamaları</text>
+    <path d="M360 206V248" stroke="#5a6b80" stroke-width="1.2"/>
+    <g fill="#f3f7fb" stroke="#9fb3c8">
+      <rect x="10" y="12" width="120" height="38" rx="6"/><rect x="140" y="12" width="120" height="38" rx="6"/><rect x="270" y="12" width="120" height="38" rx="6"/><rect x="400" y="12" width="120" height="38" rx="6"/><rect x="530" y="12" width="180" height="38" rx="6"/>
+      <rect x="10" y="64" width="120" height="38" rx="6"/><rect x="530" y="64" width="180" height="38" rx="6"/>
+      <rect x="10" y="130" width="160" height="38" rx="6"/><rect x="550" y="130" width="160" height="38" rx="6"/>
+      <rect x="10" y="190" width="160" height="38" rx="6"/><rect x="550" y="190" width="160" height="38" rx="6"/>
+      <rect x="10" y="250" width="160" height="38" rx="6"/><rect x="550" y="250" width="160" height="38" rx="6"/>
+    </g>
+    <text x="70" y="29" text-anchor="middle" font-weight="700">tour.js</text><text x="70" y="42" text-anchor="middle" font-size="8.3" fill="#566273">veri güdümlü tur</text>
+    <text x="200" y="29" text-anchor="middle" font-weight="700">story.js</text><text x="200" y="42" text-anchor="middle" font-size="8.3" fill="#566273">üretim hikâyesi</text>
+    <text x="330" y="29" text-anchor="middle" font-weight="700">lens.js</text><text x="330" y="42" text-anchor="middle" font-size="8.3" fill="#566273">röntgen merceği</text>
+    <text x="460" y="29" text-anchor="middle" font-weight="700">chambers.js</text><text x="460" y="42" text-anchor="middle" font-size="8.3" fill="#566273">kamara dolgusu</text>
+    <text x="620" y="29" text-anchor="middle" font-weight="700">thermal.js</text><text x="620" y="42" text-anchor="middle" font-size="8.3" fill="#566273">ısı haritası geçişi, açıklama</text>
+    <text x="70" y="81" text-anchor="middle" font-weight="700">kiosk.js</text><text x="70" y="94" text-anchor="middle" font-size="8.3" fill="#566273">boşta → tanıtım</text>
+    <text x="620" y="81" text-anchor="middle" font-weight="700">configurator.js · window.js</text><text x="620" y="94" text-anchor="middle" font-size="8.3" fill="#566273">köşeden pencereye</text>
+    <text x="90" y="147" text-anchor="middle" font-weight="700">section-inset.js</text><text x="90" y="160" text-anchor="middle" font-size="8.3" fill="#566273">canlı 2B kesit, makeCutter</text>
+    <text x="630" y="147" text-anchor="middle" font-weight="700">measure.js</text><text x="630" y="160" text-anchor="middle" font-size="8.3" fill="#566273">ölçüm, yapışma</text>
+    <text x="90" y="207" text-anchor="middle" font-weight="700">water.js · drawing.js</text><text x="90" y="220" text-anchor="middle" font-size="8.3" fill="#566273">su animasyonu, çizim bindirme</text>
+    <text x="630" y="207" text-anchor="middle" font-weight="700">hotspots.js</text><text x="630" y="220" text-anchor="middle" font-size="8.3" fill="#566273">işaretler, patlatma etiketleri</text>
+    <text x="90" y="267" text-anchor="middle" font-weight="700">contact-shadow.js</text><text x="90" y="280" text-anchor="middle" font-size="8.3" fill="#566273">temas gölgesi, ışık havuzu</text>
+    <text x="630" y="267" text-anchor="middle" font-weight="700">*-data.js</text><text x="630" y="280" text-anchor="middle" font-size="8.3" fill="#566273">parça, tur, halka, ısı, kural verisi</text>
+    <g stroke="#9fb3c8" stroke-width="1" fill="none">
+      <path d="M70 50L300 120"/><path d="M200 50L320 120"/><path d="M330 50L345 120"/><path d="M460 50L385 120"/><path d="M620 50L420 120"/>
+      <path d="M130 83L260 125"/><path d="M530 83L455 125"/>
+      <path d="M170 149H250"/><path d="M550 149H470"/><path d="M170 209L250 190"/><path d="M550 209L470 190"/><path d="M170 269L262 200"/><path d="M550 269L458 200"/>
+    </g>
+  </g>
+</svg>
+<p class="small muted">Şekil 4.1 · Modül haritası. Her modül kurucusunda <code>app.onFrame()</code> ile render döngüsüne bağlanır.</p>
+
+<h2 id="s4-1">4.1 Açılış sırası</h2>
+<ol>
+  <li><strong>Renderer:</strong> WebGL 2, <code>NeutralToneMapping</code>, sRGB çıkış, yerel kırpma açık. Kenar yumuşatma <code>?aa=0</code> ile kapanır; piksel oranı üst sınırı 2 (kiosk 1,5, <code>?dpr</code>). Yazılımsal GL (llvmpipe, SwiftShader) algılanırsa düşük kalite kademesi.</li>
+  <li><strong>file://</strong> ise gömülü varlıklar yüklenir (3.6).</li>
+  <li><strong>Paralel yükleme:</strong> GLB (meshopt) ve beş KTX2 doku; ilerleme çubuğu beklenen bayt boyutlarıyla (<code>EXPECTED</code>).</li>
+  <li><strong>Ortam:</strong> HDRI → PMREM; dokuların renk uzayı ve süzme ayarları (ısı dokusu: <code>unpackAlignment = 1</code>, doğrusal süzme).</li>
+  <li><strong>Model:</strong> her parça için <code>createMaterial()</code>, nicemleme açılımı (<code>uODeq</code>) ve BVH (<code>computeBoundsTree</code>).</li>
+  <li><strong>Arayüz ve modüller:</strong> ışık, temas gölgesi, ölçü çizgileri; drawing, hotspots, water, lens, chambers, thermal, section-inset, measure, configurator, story, tour, kiosk.</li>
+  <li><strong>Ön derleme:</strong> kesit açık/kapalı × mercek açık/kapalı varyantları, hayalet ve tam pencere malzemeleri <code>compileAsync</code> ile derlenir; ilk kullanımda takılma olmaz.</li>
+  <li><strong>Başlangıç:</strong> açılış sinematiği; kiosk yeniden yüklemesinde (<code>&amp;attract=1</code>) doğrudan tanıtım döngüsü.</li>
+</ol>
+
+<h2 id="s4-2">4.2 Durum ve render döngüsü</h2>
+<p>Uygulama durumu tek bir <code>state</code> nesnesindedir: seçim ve üzerine gelme, izolasyon ve hayalet kümeleri, patlatma (değer, hedef, animasyon), kesit (<code>on, axis, pos, flip</code>), ölçü/çizim/işaret anahtarları, renk ve karşılaştırma perdesi, kamera animasyonu, açılış ve pencere kipi.</p>
+<p><code>requestAnimationFrame</code> döngüsü her karede şu sırayla çalışır: üzerine gelme → görünüm kaydırma → kamera animasyonu → modüllerin <code>step()</code> kancaları → patlatma → AO karışımı ve vurgu geçişleri → 360° döner tabla. Herhangi bir adım "etkin" dönerse ya da <code>needsRender &gt; 0</code> ise kare çizilir; aksi halde çizim atlanır ve GPU boşta kalır. Modüller bir şey değiştirdiğinde <code>app.requestRender()</code> çağırır.</p>
+<p><strong>Uyarlanabilir kalite:</strong> açılıştan 10 sn sonra, 60 karelik ortalama 45 FPS'nin altındaysa önce piksel oranı 0,25 adımla düşer, sonra mikro yüzey ayrıntısı kapanır. Kiosk tanıtımına her girişte kalite yeniden denenir (<code>restoreQuality</code>).</p>
+<p><strong>Serbest alan:</strong> açık paneller (parça listesi, bilgi paneli, yapılandırıcı, canlı kesit, ısı açıklaması, tur kartı) engel sayılır; kamera modeli kalan alana ortalar (<code>setViewOffset</code>). Panel ölçümleri <code>ResizeObserver</code> ve <code>MutationObserver</code> ile önbelleğe alınır.</p>
+
+<h2 id="s4-3">4.3 Modüller</h2>
+<table class="long">
+  <thead><tr><th style="width:22%">Dosya</th><th>Görev</th><th class="r">Ek çağrı</th><th class="r">Satır</th></tr></thead>
+  <tbody>
+    <tr><td><code>main.js</code></td><td>Çekirdek: yükleme, model, kamera, kesit, seçim, patlatma, arayüz, klavye, performans, render döngüsü</td><td class="r">—</td><td class="r">{{LINES:source/viewer-kose/js/main.js}}</td></tr>
+    <tr><td><code>materials.js</code></td><td>PBR malzemeleri ve gölgelendirici yamaları (bölüm 5)</td><td class="r">—</td><td class="r">{{LINES:source/viewer-kose/js/materials.js}}</td></tr>
+    <tr><td><code>tour.js</code></td><td>Veri güdümlü keşif turu; kiosk tanıtım döngüsü</td><td class="r">—</td><td class="r">{{LINES:source/viewer-kose/js/tour.js}}</td></tr>
+    <tr><td><code>story.js</code></td><td>Üretim hikâyesi: 6 adım, 46 sn; kollar geçici mesh'lere bölünür, ısıtıcı plaka, kaynak taşıntısı</td><td class="r">yalnız oynarken</td><td class="r">{{LINES:source/viewer-kose/js/story.js}}</td></tr>
+    <tr><td><code>lens.js</code></td><td>Röntgen merceği (<code>SUP_LENS</code>)</td><td class="r">0</td><td class="r">{{LINES:source/viewer-kose/js/lens.js}}</td></tr>
+    <tr><td><code>chambers.js</code></td><td>Kamara dolgusu: sayaç (14/11) ve ısı haritası dolgusu</td><td class="r">+1</td><td class="r">{{LINES:source/viewer-kose/js/chambers.js}}</td></tr>
+    <tr><td><code>thermal.js</code></td><td>Isı haritası geçişi ve açıklama paneli</td><td class="r">0</td><td class="r">{{LINES:source/viewer-kose/js/thermal.js}}</td></tr>
+    <tr><td><code>section-inset.js</code></td><td>Canlı 2B kesit (canvas) ve paylaşılan <code>makeCutter()</code></td><td class="r">0</td><td class="r">{{LINES:source/viewer-kose/js/section-inset.js}}</td></tr>
+    <tr><td><code>measure.js</code></td><td>Ölçüm aracı</td><td class="r">+1</td><td class="r">{{LINES:source/viewer-kose/js/measure.js}}</td></tr>
+    <tr><td><code>configurator.js</code></td><td>Köşeden pencereye: kart, kip geçişleri, büyüme, 3B etiketler</td><td class="r">—</td><td class="r">{{LINES:source/viewer-kose/js/configurator.js}}</td></tr>
+    <tr><td><code>window.js</code></td><td>Tam pencere geometrisi (süpürme), cam, menteşe, kol, işaretler</td><td class="r">+7</td><td class="r">{{LINES:source/viewer-kose/js/window.js}}</td></tr>
+    <tr><td><code>configurator-data.js</code></td><td>Döküman kuralları, saf işlevler (Node ile test edilir)</td><td class="r">—</td><td class="r">{{LINES:source/viewer-kose/js/configurator-data.js}}</td></tr>
+    <tr><td><code>water.js</code></td><td>Su tahliyesi: damlalar (InstancedMesh) ve akış şeridi</td><td class="r">+2</td><td class="r">{{LINES:source/viewer-kose/js/water.js}}</td></tr>
+    <tr><td><code>drawing.js</code></td><td>s.9 çizim bindirmesi (LineSegments)</td><td class="r">+1</td><td class="r">{{LINES:source/viewer-kose/js/drawing.js}}</td></tr>
+    <tr><td><code>hotspots.js</code></td><td>Numaralı bilgi işaretleri (BVH görünürlük testi), patlatma etiketleri</td><td class="r">0</td><td class="r">{{LINES:source/viewer-kose/js/hotspots.js}}</td></tr>
+    <tr><td><code>kiosk.js</code></td><td>Kiosk modu</td><td class="r">0</td><td class="r">{{LINES:source/viewer-kose/js/kiosk.js}}</td></tr>
+    <tr><td><code>contact-shadow.js</code></td><td>Temas gölgesi ve ışık havuzu; yalnız model hareket edince yeniden hesaplanır</td><td class="r">1</td><td class="r">{{LINES:source/viewer-kose/js/contact-shadow.js}}</td></tr>
+    <tr><td><code>parts-data.js</code></td><td>26 parça, gruplar, malzemeler, patlatma vektörleri, kesit hazırları, renkler, teknik özellikler, varsayımlar, <code>PERFORMANCE</code></td><td class="r">—</td><td class="r">{{LINES:source/viewer-kose/js/parts-data.js}}</td></tr>
+    <tr><td><code>tour-data.js</code></td><td>12 tur bölümü</td><td class="r">—</td><td class="r">{{LINES:source/viewer-kose/js/tour-data.js}}</td></tr>
+  </tbody>
+</table>
+<p class="small muted">"Ek çağrı": özellik açıkken eklenen çizim çağrısı. Satır sayıları bu belgenin derlendiği sürümdendir.</p>
+
+<h2 id="s4-4">4.4 Kesit sistemi</h2>
+<p>Tek bir <code>THREE.Plane</code> kullanılır. Eksenler: <strong>x</strong> ve <strong>y</strong> (kolun serbest ucu tarafı atılır), <strong>z</strong> (oda tarafı atılır, boyuna kesit) ve <strong>d</strong> (gönye; düzlem konumu <code>(x − y)/√2</code>). Düzlem malzemelere yalnızca kesit açıkken bağlanır; kapalıyken <code>clippingPlanes = null</code> olur ve erken derinlik testi korunur. Kesilen katının içi, arka yüzlerin kapak rengiyle boyanmasıyla dolu görünür (5.4). Kesit panelinde altı hazır kesit vardır: gönye, vida ekseni (X 150), D-E (X 100), C (X 202) ve A (X 230) yarıkları, yan kol.</p>
+
+<h2 id="s4-5">4.5 Seçim ve patlatma</h2>
+<ul>
+  <li><strong>Seçim:</strong> <code>Raycaster</code> + <code>acceleratedRaycast</code> (BVH). Kesitin atılan tarafındaki isabetler elenir, mercek içindeki PVC isabetleri atlanır, saydam camın 12 cm arkasındaki katı parça önceliklidir. Üretim hikâyesi ve pencere kipinde seçim kapalıdır.</li>
+  <li><strong>Patlatma:</strong> her parçanın <code>explode</code> listesi <code>{ t: [başlangıç, bitiş], v: [x, y, z] mm }</code> adımlarından oluşur; oran 0–1 kaydırıcıyla ya da animasyonla değişir. Görünür küre otomatik çerçevelenir; AO parça-içi kanala geçer.</li>
+</ul>
+
+<h2 id="s4-6">4.6 Keşif turu</h2>
+<p>Tur tamamen veridir (<code>tour-data.js</code>); her bölüm aşağıdaki anahtarlarla tanımlanır ve <code>tour.goTo()</code> önce önceki bölümün etkilerini temizler (<code>cleanup()</code>).</p>
+<table>
+  <thead><tr><th style="width:18%">Anahtar</th><th>Etki</th></tr></thead>
+  <tbody>
+    <tr><td><code>view</code>, <code>turn</code></td><td>Kamera pozu (görünüm adı ya da <code>{ dir, r, target, fov }</code>), 360° dönüş</td></tr>
+    <tr><td><code>clip</code>, <code>explode</code>, <code>dims</code></td><td>Kesit düzlemi, patlatma oranı, döküman ölçüleri</td></tr>
+    <tr><td><code>ghost</code>, <code>solo</code></td><td>Hayalet (x-ray) parçalar, izolasyon</td></tr>
+    <tr><td><code>water</code>, <code>hotspots</code>, <code>callouts</code></td><td>Su animasyonu, bilgi işaretleri, patlatma etiketleri</td></tr>
+    <tr><td><code>finishes</code></td><td>Bölüm süresince sırayla gösterilen renkler</td></tr>
+    <tr><td><code>story</code>, <code>lens</code>, <code>chambers</code>, <code>thermal</code>, <code>window</code></td><td>Üretim hikâyesi, röntgen merceği, kamara sayacı, ısı haritası, köşeden pencereye</td></tr>
+    <tr><td><code>dur</code></td><td>Bölüm süresi (ms)</td></tr>
+  </tbody>
+</table>
+<p>Bölümler: genel (10 sn), kaynak (12), kamara (12), ısı (14), çelik/röntgen (13), conta (12), su (18), cam (12), üretim hikâyesi (46,5), renk (16), köşeden pencereye (14), final (9); toplam yaklaşık 3 dk 9 sn. <code>tour.start({ only })</code> tek bölüm oynatır (Araçlar'dan üretim hikâyesi); <code>{ loop, attract }</code> kiosk tanıtımıdır.</p>
+
+<h2 id="s4-7">4.7 Kiosk modu</h2>
+<table>
+  <thead><tr><th style="width:24%">Davranış</th><th>Ayrıntı</th></tr></thead>
+  <tbody>
+    <tr><td>Boşta → tanıtım</td><td><code>&amp;idle</code> sn (varsayılan 90) dokunulmazsa <code>resetAll()</code>, kalite yenileme, beyaz renk ve döngülü tur; "Dokunun ve keşfedin" çağrısı. İlk dokunuş tanıtımı bitirir ve seçim sayılmaz (<code>swallowTap</code>, en fazla 1,5 sn).</td></tr>
+    <tr><td>Dokunmatik</td><td>Büyük hedefler; sağ tık, metin seçimi ve sayfa yakınlaştırma kapalı; imleç 3 sn sonra gizlenir.</td></tr>
+    <tr><td>Dayanıklılık</td><td>İlk dokunuşta tam ekran (<code>&amp;fs=0</code> ile kapatılır); <code>&amp;reload</code> saatte bir tanıtımdayken yenileme; grafik bağlamı kaybı ya da yükleme hatasında (20 sn sonra) <code>&amp;attract=1</code> ile yeniden yükleme ve doğrudan tanıtım.</td></tr>
+    <tr><td>OLED koruması</td><td>Tanıtımda marka soluklaşır; sabit öğeler 240 sn'lik yavaş bir kayma animasyonuyla (<code>translate</code>) yer değiştirir.</td></tr>
+    <tr><td>Sayfa geçişi</td><td>Kiosk parametreleri (<code>kiosk, idle, reload, fs, q, dpr, aa</code>) iki sayfa arasında taşınır; düz kesit boşta kalınca köşe sayfasına döner.</td></tr>
+    <tr><td>Operatör</td><td>Sağ üst köşeye 3 sn içinde 5 dokunuş performans panelini açar; çıkış Alt+F4 / ⌘Q.</td></tr>
+  </tbody>
+</table>
+<figure style="width:78%; margin-left:auto; margin-right:auto"><img src="img/18_kiosk_tanitim.jpg"><figcaption>Kiosk tanıtım döngüsü: tur kartı, çağrı ve soluklaşmış marka.</figcaption></figure>
+
+<!-- ================================================================ 5 -->
+<h1 id="s5"><span class="num">5</span>Gölgelendiriciler</h1>
+<p>Görüntüleyici kendi gölgelendiricisini sıfırdan yazmaz. three.js'in standart PBR malzemeleri (<code>MeshPhysicalMaterial</code>, <code>MeshStandardMaterial</code>) <code>onBeforeCompile</code> ile yamalanır. Böylece ışık, ortam haritası, ton eşleme ve kırpma three.js'ten gelir; proje yalnız kendi katmanlarını ekler. Yamalar <code>materials.js</code> → <code>patch()</code> içindedir.</p>
+
+<h2 id="s5-1">5.1 Enjeksiyon noktaları</h2>
+<table class="long">
+  <thead><tr><th style="width:30%">three.js parçası</th><th>Eklenen</th></tr></thead>
+  <tbody>
+    <tr><td><code>common</code> (tepe, parça)</td><td>Varyingler (<code>vWPos, vWNrm, vOPos, vONrm, vFoil, vAxis</code>), uniformlar, gürültü işlevleri, <code>capHatch()</code>, <code>THERMAL_GLSL</code></td></tr>
+    <tr><td><code>fog_vertex</code></td><td>Dünya ve nesne konumu/normali; folyo maskesi; pencere ekseni</td></tr>
+    <tr><td><code>clipping_planes_fragment</code></td><td>Öncesinde: mercek (<code>SUP_LENS</code>) ve tam pencere (<code>SUP_WIN</code>) <code>discard</code></td></tr>
+    <tr><td><code>aomap_fragment</code></td><td>İki kanallı AO (<code>mix(R, A, uAoMix)</code>); kesit düzlemine yakın yüzeylerde AO gevşetme</td></tr>
+    <tr><td><code>color_fragment</code></td><td>Renk seti seçimi, folyo ve ahşap, kalıp izi, kaynak dikişi, galvaniz deseni</td></tr>
+    <tr><td><code>roughnessmap_fragment</code>, <code>normal_fragment_maps</code></td><td>Folyo pürüzlülüğü, gren; kalıp izi normali, folyo kabartması (türevden)</td></tr>
+    <tr><td><code>lights_physical_fragment</code></td><td>Folyoda vernik (clearcoat) çarpanı</td></tr>
+    <tr><td><code>emissivemap_fragment</code></td><td>Üretim hikâyesinde gönye yüzü ısınması (<code>uHeat</code>)</td></tr>
+    <tr><td><code>dithering_fragment</code></td><td>Isı haritası, kesit kapağı, vurgu (fresnel), numune sınırı çizgisi</td></tr>
+  </tbody>
+</table>
+<p>Her malzemenin program önbellek anahtarı <code>'kose-' + malzeme + define'lar</code>'dır; aynı yama farklı define'larla ayrı programlara derlenir.</p>
+
+<h2 id="s5-2">5.2 Uniform ve define'lar</h2>
+<table class="long">
+  <thead><tr><th style="width:26%">Paylaşılan uniform</th><th>Anlam</th></tr></thead>
+  <tbody>
+    <tr><td><code>uClip, uClipOn</code></td><td>Kesit düzlemi (normal, sabit) ve durumu</td></tr>
+    <tr><td><code>uAoMix, uAoStrength</code></td><td>Montaj ↔ parça AO karışımı, AO şiddeti</td></tr>
+    <tr><td><code>uMicro, uSeam</code></td><td>Mikro yüzey ayrıntısı (düşük kademede 0), kaynak dikişi görünürlüğü</td></tr>
+    <tr><td><code>uFin[4], uFinA[4], uFinB[4]</code></td><td>Dört renk seti: [perde solu dış, sol iç, sağ dış, sağ iç]; mod, pürüzlülük, vernik, kabartma ve iki renk</td></tr>
+    <tr><td><code>uSplit, uLens</code></td><td>Renk perdesi (cihaz pikseli), mercek (merkez, yarıçap, açık)</td></tr>
+    <tr><td><code>uHeat, uCapTint</code></td><td>Üretim hikâyesi: gönye ısınması, kesit yüzü renk katmanı</td></tr>
+    <tr><td><code>uThermal, uTemp, uTempBox</code></td><td>Isı haritası geçişi, sıcaklık dokusu, doku kutusu</td></tr>
+    <tr><td><code>uWinGrow, uWood</code></td><td>Pencere büyüme yarıçapı (m), ahşap desen dokusu</td></tr>
+  </tbody>
+</table>
+<p>Malzeme başına: <code>uHi, uHiColor</code> (vurgu), <code>uCapColor, uCapHatch, uHatch</code> (kapak rengi ve tarama), <code>uSeamK</code>, <code>uODeq</code> (5.3), <code>uThK</code> (ısı haritasında boyanır mı; ısıcam bileşenleri hesapta olmadığı için 0).</p>
+<table>
+  <thead><tr><th style="width:18%">Define</th><th>Malzeme</th><th>Etki</th></tr></thead>
+  <tbody>
+    <tr><td><code>SUP_FOIL</code></td><td>Kasa, kanat, çıta</td><td>Folyo maskesi (<code>uv1</code>), renk setleri, ahşap deseni</td></tr>
+    <tr><td><code>SUP_SEAM</code></td><td>Kaynaklı profiller, çıta</td><td>Gönye düzleminde ekranda en az 1 piksel dikiş; ısınma parıltısı</td></tr>
+    <tr><td><code>SUP_DIE</code></td><td>PVC</td><td>Ekstrüzyon kalıp izleri (kol ekseni boyunca, yakın planda)</td></tr>
+    <tr><td><code>SUP_GRAIN</code></td><td>EPDM, TPE, nem alıcı</td><td>0,38 mm mat gren</td></tr>
+    <tr><td><code>SUP_TRI</code></td><td>Çelik</td><td>Üçlü düzlem galvaniz deseni</td></tr>
+    <tr><td><code>SUP_LENS</code></td><td>PVC ve kapak</td><td>Mercek içinde <code>discard</code>; yalnız mercek açıkken eklenir (erken derinlik testi için)</td></tr>
+    <tr><td><code>SUP_WIN</code></td><td>Pencere malzemeleri</td><td>Numune bölgesini atma, sınır çizgisi, büyüme, süpürme ekseni</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s5-3">5.3 Nicemlenmiş geometri: <code>uODeq</code></h2>
+<p>GLB <code>KHR_mesh_quantization</code> kullanır: köşe noktaları 16 bit tam sayıdır, düğümün ölçeği ve ötelemesi onları metreye açar. Gölgelendiricideki milimetre ölçekli desenler (kalıp izi, ahşap damarı, gren, kaynak dikişi, ısı haritası) nesne uzayında çalıştığından <code>vOPos = transformed · uODeq.w + uODeq.xyz</code> ile numunenin durağan metre koordinatı kullanılır. <code>uODeq</code> her parça için yüklemede düğümden okunur; eşit olmayan ölçek uyarı verir. (Bu açılım yokken ahşap deseni lekeli görünüyordu.)</p>
+
+<h2 id="s5-4">5.4 Kesit kapağı</h2>
+<p>Bir katı kırpıldığında içi boş görünür; kamera kesilen yüzeyin içindeki <em>arka yüzleri</em> görür. Proje bu arka yüzleri (<code>!gl_FrontFacing</code>) ton eşlemeden geçmeyen düz bir kapak rengiyle boyar ve üstüne tarama çizer: <code>capHatch()</code> çizgi aralığını ekrandaki piksel boyutuna göre 2'nin katları halinde seçer, böylece yakınlaştırırken kaymadan sıklaşır. Ek geometri gerekmez ve çizim çağrısı eklenmez. Çelik, EPDM, cam ara çıtası gibi malzemelerin kapak renk ve tarama yönleri ayrıdır (<code>CAP</code> tablosu).</p>
+<p>Isı haritasında kapağın <em>kesit koordinatı</em> gerekir; arka yüzün kendi konumu kesit düzleminde değildir. Bu yüzden bakış ışınının düzlemi deldiği nokta hesaplanır:</p>
+<svg class="diag" viewBox="0 0 720 150" xmlns="http://www.w3.org/2000/svg">
+  <g font-size="10" fill="#18202c">
+    <circle cx="40" cy="80" r="9" fill="#1377b5"/><text x="40" y="106" text-anchor="middle" font-size="9">kamera</text>
+    <path d="M49 78L610 40" stroke="#1377b5" stroke-width="1.4" stroke-dasharray="5 3"/>
+    <rect x="330" y="14" width="10" height="122" fill="#dbe9f5" stroke="#7fb3d9"/><text x="335" y="148" text-anchor="middle" font-size="9">kesit düzlemi</text>
+    <path d="M340 30H640V120H340" fill="#eef2f6" stroke="#9fb3c8"/><text x="560" y="112" font-size="9" fill="#566273">kırpılan katı (kalan taraf)</text>
+    <path d="M600 30V120" stroke="#d05b5b" stroke-width="2"/><text x="604" y="84" font-size="9" fill="#b04444">arka yüz</text>
+    <circle cx="600" cy="42" r="4" fill="#d05b5b"/><text x="606" y="36" font-size="9" fill="#b04444">vWPos</text>
+    <circle cx="335" cy="60" r="4.5" fill="#1a9a55"/><text x="352" y="66" font-size="9.5" fill="#137a43" font-weight="700">po = kesit noktası</text>
+  </g>
+</svg>
+<pre><code>vec3 rd = vWPos - cameraPosition;                          // bakış ışını (dünya)
+float tt = -(dot(uClip.xyz, cameraPosition) + uClip.w) / dot(uClip.xyz, rd);
+vec3 po  = gl_FrontFacing ? vOPos : vOPos + rd * (tt - 1.0);  // numune yalnız ötelendiği için dünya farkı = nesne farkı
+vec2 sxy = vec2(po.z * 1000.0 + 52.25, (po.x &gt;= po.y ? po.y : po.x) * 1000.0);   // alt kol Y, yan kol X</code></pre>
+
+<h2 id="s5-5">5.5 Renk, folyo ve iki renkli seçenek</h2>
+<ul>
+  <li><strong>Dört renk seti</strong> perdenin iki tarafı × dış/iç yüz içindir. İç yüz: nesne normali +Z'ye bakan ya da yan yüzlerde sx &gt; 55 mm (cam ortası) olan yüzler. Perde <code>gl_FragCoord.x &gt; uSplit.x</code> ile ayrılır; ikinci geçiş gerekmez.</li>
+  <li><strong>Ahşap:</strong> 0,5 m × 0,125 m döşeme, kol ekseni boyunca damar; kabartma yüksekliği desenin türevinden (<code>dFdx/dFdy</code>) hesaplanır ve doku pikseli ekranda ~2 pikselden küçülünce söner.</li>
+  <li><strong>Seçenekler</strong> (<code>FINISHES</code>): beyaz, antrasit gri, siyah, altın meşe, ceviz; iki renkli dış antrasit / iç beyaz ve dış altın meşe / iç beyaz. Renkler görsel amaçlıdır.</li>
+</ul>
+
+<h2 id="s5-6">5.6 Diğer malzemeler</h2>
+<ul>
+  <li><strong>Cam:</strong> fiziksel malzeme, Low-E tonu, kenar yüzleri yeşilimsi ve daha opak; <code>forceSinglePass</code> (saydam + çift yüz tek geçişte). Isı haritasında sönükleşir.</li>
+  <li><strong>Hayalet (x-ray):</strong> fresnel kenar parlamalı tek paylaşılan <code>ShaderMaterial</code>, tek geçiş; turdaki conta ve su bölümlerinde bağlam parçaları için.</li>
+  <li><strong>Kamara dolgusu:</strong> <code>ShaderMaterial</code>; sıra özniteliği (<code>aOrd</code>) ile sayaç animasyonu, <code>uMode = 1</code>'de sıcaklık rengi.</li>
+</ul>
+
+<!-- ================================================================ 6 -->
+<h1 id="s6"><span class="num">6</span>Mühendislik modülleri</h1>
+
+<h2 id="s6-1">6.1 Isı haritası</h2>
+<p>İç 20 °C / dış 0 °C koşulunda kesitteki sıcaklık dağılımı. Hesap <code>scripts/thermal_section.py</code> ile önceden yapılır; görüntüleyici sonucu doku olarak okur. Açıklamada yalnızca resmi değer (Uf = 1,0, ift) yazılır; hesabın kendi Uf değeri gösterilmez.</p>
+<div class="grid2">
+  <figure><img src="img/10_isi_haritasi.jpg"><figcaption>Uç yüzde ısı haritası ve açıklama paneli.</figcaption></figure>
+  <figure><img src="img/11_isi_kesit_canli.jpg"><figcaption>X = 150 kesitinde ısı haritası; sol altta canlı 2B kesit.</figcaption></figure>
+</div>
+<h3>Yöntem (EN ISO 10077-2)</h3>
+<ul>
+  <li>Kesit 0,1 mm ızgarada ayrıklaştırılır (1070 × 1410 hücre); sonlu farklar, hücreler arası harmonik ortalama iletkenlik, <code>scipy.sparse.linalg.spsolve</code>.</li>
+  <li>İletkenlikler (W/(m·K)): sert PVC 0,17 · EPDM 0,25 · yumuşak PVC/TPE 0,14 · çelik 50 · PP 0,22. Isıcam standarttaki gibi 0,035 W/(m·K) yalıtım paneliyle (32 mm) temsil edilir.</li>
+  <li>Kapalı boşluklar (62 adet) eşdeğer iletkenlikle: <code>λ_eq = b (h_a + h_r)</code>; <code>h_a = C1/b</code> (b &lt; 5 mm) ya da <code>max(C1/b, C2·ΔT^(1/3))</code>, C1 = 0,025, C2 = 0,73, ΔT = 10 K; <code>h_r = 4σT_m³·E·F</code>, E = 1/(2/ε − 1), ε = 0,9, F = ½(1 + √(1 + d²/b²) − d/b), T_m = 283 K. b ısı akışı yönündeki, d dik boyuttur.</li>
+  <li>Sınırlar: iç 20 °C ve Rsi 0,13 m²K/W; dış 0 °C ve Rse 0,04 m²K/W; duvar tarafı ve panelin üst kesimi adyabatik.</li>
+</ul>
+<h3>Doğrulama (<code>thermal_check.json</code>)</h3>
+<table>
+  <thead><tr><th>Denetim</th><th>Sonuç</th></tr></thead>
+  <tbody>
+    <tr><td>Enerji dengesi</td><td>İç ve dış akı 2,8467 W/m; fark ~2·10⁻⁸ %</td></tr>
+    <tr><td>Izgara yakınsaması</td><td>0,1 → 0,2 mm ızgarada akı farkı %0,15</td></tr>
+    <tr><td>Uf iç denetimi</td><td>Panel görünür kenardan 190 mm, 0,25 mm ızgara: hesaplanan Uf ≈ 1,03 W/(m²K); resmi değer 1,0. Arayüzde gösterilmez.</td></tr>
+  </tbody>
+</table>
+<h3>Doku ve gösterim</h3>
+<ul>
+  <li>Sıcaklık 0,2 mm/piksel'e (2 × 2 ortalama) indirilir: 535 × 705 piksel, değer T/20. Kesit dışındaki pikseller en yakın katının sıcaklığıyla doldurulur (süzmede kenar halkası olmasın).</li>
+  <li><strong>R16F, 1/1024 basamak, yarım basamak kaydırılmış.</strong> 8 bitte eş sıcaklık değerleri (ör. 2 °C = 51/255) tam bir bayt düzeyine denk geldiği için geniş düzlükler çizgi gibi boyanıyordu. 16 bit ve yarım basamak kaydırma bunu çözer; anlamsız alt bitler sıfırlandığından zstd ile {{KB:site/assets/kose/isi.ktx2}}'a sıkışır.</li>
+  <li>Dokunun ilk satırı kesitin üst kenarıdır; bu yüzden <code>uTempBox = (x0, y0 + H, W, −H)</code>.</li>
+  <li><code>THERMAL_GLSL</code>: beş duraklı renk rampası; <code>fwidth</code> ile ekranda sabit kalınlıkta eş sıcaklık çizgileri (2 °C ince, 10 °C kalın). Kesit kapakları, kolların serbest uç yüzleri ve kamara dolgusu boyanır; diğer yüzeyler sönükleşir. Gönye kesitinde kamara dolgusunun üçüncü takımı x − y = sabit düzlemine yerleşir.</li>
+</ul>
+
+<h2 id="s6-2">6.2 Canlı 2B kesit</h2>
+<p>Kesit açıkken sol altta düzlemdeki gerçek kesit çizilir. Algoritma <code>section-inset.js</code> → <code>makeCutter()</code> içindedir ve ölçüm aracı da aynı işlevi kullanır.</p>
+<ol>
+  <li>Düzlem her görünür parçanın yerel uzayına alınır (<code>matrixWorld</code> tersi).</li>
+  <li>three-mesh-bvh <code>shapecast</code>: yalnız düzlemi kesen BVH düğümleri gezilir; düzlemin iki yanına düşen üçgenlerden kesişim parçası çıkar.</li>
+  <li><strong>Belirlenimci kenar noktası:</strong> bir kenar iki üçgende de uç noktalar sözlük sırasına dizilerek hesaplanır; böylece ortak kenarın kesişim noktası iki üçgende bit düzeyinde aynı çıkar.</li>
+  <li>Parçalar 1 µm'lik anahtarlarla uç uca eklenip halkalara dönüşür; canvas'a çift-tek (evenodd) kuralıyla dolgu yapılır. Isı haritası açıksa parça sınırı içi, yarım kayan noktalı dokudan CPU'da üretilen sıcaklık görüntüsüyle boyanır.</li>
+  <li>Güncelleme en çok 100 ms'de bir; 3B çizim çağrısı eklenmez.</li>
+</ol>
+<pre><code>// ortak kenar, iki üçgende de aynı sırayla hesaplanır: uç noktalar bit düzeyinde aynı çıkar
+if (Q.x &lt; P.x || (Q.x === P.x &amp;&amp; (Q.y &lt; P.y || (Q.y === P.y &amp;&amp; Q.z &lt; P.z)))) { [P, Q] = [Q, P]; [dP, dQ] = [dQ, dP]; }
+const t = dP / (dP - dQ);
+pts.push(P.x + (Q.x - P.x) * t, P.y + (Q.y - P.y) * t, P.z + (Q.z - P.z) * t);</code></pre>
+<p>Etiketler: düzlem bir drenaj yarığının 17 mm yakınındaysa yarığın adı ve işlevi (<code>kose_info.json</code> konumları), vida kesiliyorsa vida tipi, x/y kesitinde hiç takviye yoksa "çelik takviye yok: kaynak bölgesi".</p>
+<div class="grid2">
+  <figure><img src="img/12_canli_kesit.jpg"><figcaption>X = 230: A yarığı kesiliyor.</figcaption></figure>
+  <figure style="width:62%"><img src="img/12b_canli_kesit_yakin.jpg"><figcaption>Canlı kesit penceresi (yakın).</figcaption></figure>
+</div>
+
+<h2 id="s6-3">6.3 Ölçüm</h2>
+<p>İki dokunuş arasındaki mesafe 0,1 mm hassasiyetle gösterilir; en fazla üç ölçü tutulur (tek <code>LineSegments</code>, etiketler DOM). Yapışma kuralları:</p>
+<ul>
+  <li><strong>Kesit yüzü</strong> (arka yüz isabeti, kesit açık): nokta ışın ∩ düzlem; aday noktalar <code>makeCutter</code> ile o parçanın kesit hattıdır.</li>
+  <li><strong>Kolun serbest uç yüzü:</strong> yüzün 0,01 mm içinden kesit alınır; nokta üçgenleme köşegenlerine değil profil hattına yapışır.</li>
+  <li><strong>Diğer yüzeyler:</strong> isabet üçgeninin köşeleri ve yalnız kol eksenine paralel ya da dik kenarları (ekstrüzyon hatları; dörtgen köşegenleri atlanır).</li>
+  <li>En yakın aday seçilir; bir köşe dokunuşa yarıçapın %35'inden yakınsa önceliklidir. Kenar noktası ışına en yakın nokta olarak hesaplanır (perspektif doğru). Yarıçap fareyle 10 px, dokunmatikte 18 px.</li>
+</ul>
+<p>Doğrulama: uç yüzde ve X = 150 kesit yüzünde kasa genişliği <strong>85,0 mm</strong> ölçülür (s.9: 85 mm; kesit verisinde 0,0013–84,9928 mm).</p>
+<figure style="width:78%; margin-left:auto; margin-right:auto"><img src="img/13_olcum.jpg"><figcaption>Ölçüm: kasa genişliği 85,0 mm.</figcaption></figure>
+
+<h2 id="s6-4">6.4 Köşeden pencereye</h2>
+<p>Genişlik × yükseklik (kasa dış ölçüsü D, 620–2000 × 620–2400 mm) ve açılım tipi girilir; numune tam pencerenin sol alt köşesi olur ve pencere köşeden büyüyerek açılır.</p>
+<div class="grid2">
+  <figure><img src="img/14_pencere_ice.jpg"><figcaption>1200 × 1400 içe açılır: 3 menteşe, kol A/2, drenaj işaretleri.</figcaption></figure>
+  <figure><img src="img/15_pencere_cift.jpg"><figcaption>900 × 1300 çift açılım: ispanyolet, makas, köşe yatağı.</figcaption></figure>
+</div>
+<h3>Kurallar (<code>configurator-data.js</code>)</h3>
+<table class="long">
+  <thead><tr><th style="width:24%">Konu</th><th>Kural</th><th class="c">Kaynak</th></tr></thead>
+  <tbody>
+    <tr><td>Kesim listesi</td><td>Kasa D + 6, kanat D − 74, kanat içi cam D − 202 (kasadan kasaya sütunu)</td><td class="c"><span class="src">s.5</span></td></tr>
+    <tr><td>Takviye</td><td>A profil kesim boyu: kasada A − 153, kanatta A − 160</td><td class="c"><span class="src">s.10</span> <span class="src">s.11</span></td></tr>
+    <tr><td>Kanat ölçüsü</td><td>W − 80 × H − 80 (kesitte kanat dış kenarı kasa kenarından 40 mm içeride; kesim D − 74, köşe başına 3 mm kaynak payı)</td><td class="c"><span class="src">s.9</span></td></tr>
+    <tr><td>Drenaj adedi</td><td>Kasa (C = W): &lt; 500: 1 · 500–1000: 2 · 1000–2000: 3 · ≥ 2000: 4. Kanat (C = W − 80): &lt; 500: 1 · 500–1000: 2 · ≥ 1000: 3. Her kanal iki yarıktır (iç ve dış, merkezler arası 102 mm).</td><td class="c"><span class="src">s.8</span> <span class="src">s.11</span></td></tr>
+    <tr><td>Yarık yerleri</td><td>Uçlarda iç köşe referansından 10 · 32 · 70 · 32 (numunedeki gibi: kasa 100 / 202, kanat 128 / 230 mm); ara kanallar eşit aralıklı (varsayım)</td><td class="c"><span class="src">s.8</span></td></tr>
+    <tr><td>Menteşe (içe açılır)</td><td>A = kanat yüksekliği: &lt; 1100: 2 · 1100–1400: 3 · ≥ 1400: 4. Üstten ve alttan 165 mm, ikinci menteşe ilkinin 350 mm altında, kalanlar eşit aralıklı. Menteşeler sağda, kol solda (s.17 iç görünüş).</td><td class="c"><span class="src">s.17</span></td></tr>
+    <tr><td>Kol</td><td>Kanat alt kenarından A/2; mil kanat kenarından 33 mm</td><td class="c"><span class="src">s.17</span> <span class="src">s.11</span></td></tr>
+    <tr><td>Çift açılım</td><td>İspanyolet GRM (kanat yüksekliği) ve makas OR (kanat genişliği) aralıkları; aralığa giren tüm ürünler kodlarıyla listelenir, aralık dışında uyarı</td><td class="c"><span class="src">s.24</span></td></tr>
+  </tbody>
+</table>
+<p class="small muted">Döküman sınır değerleri tanımlamaz (ör. "A &lt; 1100" ve "1101 &lt; A"); sınırda üst sınıf alınır.</p>
+<h3>Süpürme algoritması (<code>window.js</code>)</h3>
+<svg class="diag" viewBox="0 0 720 210" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5a6b80"/></marker></defs>
+  <g font-size="9.5" fill="#18202c">
+    <path d="M30 170V60L60 40H120L130 70V170Z" fill="#eef3f8" stroke="#6f8aa6"/>
+    <circle cx="96" cy="120" r="4" fill="#d05b5b"/><text x="102" y="116" fill="#b04444">P (sx, sy)</text>
+    <text x="80" y="192" text-anchor="middle" fill="#566273">kesit halkası (s.9)</text>
+    <path d="M40 180H132" stroke="#9fb3c8"/><text x="42" y="202" font-size="8" fill="#8a95a4">sx →</text>
+    <path d="M150 115H236" stroke="#5a6b80" stroke-width="1.3" marker-end="url(#ar2)"/>
+    <rect x="250" y="10" width="300" height="190" fill="none" stroke="#6f8aa6"/>
+    <rect x="286" y="46" width="228" height="118" fill="none" stroke="#d05b5b" stroke-dasharray="4 3"/>
+    <path d="M250 200L286 164M550 200L514 164M550 10L514 46M250 10L286 46" stroke="#9fb3c8"/>
+    <circle cx="286" cy="164" r="3.5" fill="#d05b5b"/><circle cx="514" cy="164" r="3.5" fill="#d05b5b"/><circle cx="514" cy="46" r="3.5" fill="#d05b5b"/><circle cx="286" cy="46" r="3.5" fill="#d05b5b"/>
+    <text x="292" y="160" font-size="8.5" fill="#b04444">(sy, sy)</text><text x="508" y="160" font-size="8.5" fill="#b04444" text-anchor="end">(W − sy, sy)</text>
+    <text x="508" y="58" font-size="8.5" fill="#b04444" text-anchor="end">(W − sy, H − sy)</text><text x="292" y="58" font-size="8.5" fill="#b04444">(sy, H − sy)</text>
+    <rect x="250" y="146" width="54" height="54" fill="#ffb03a" fill-opacity=".22" stroke="#e0a040" stroke-dasharray="3 2"/>
+    <text x="566" y="150" fill="#566273">numune bölgesi (x, y &lt; 300 mm):</text><text x="566" y="164" fill="#566273">SUP_WIN discard + sınır çizgisi</text>
+    <text x="566" y="30" fill="#566273">W × H: kasa dış ölçüsü</text><text x="566" y="44" fill="#566273">köşegenler: gönye birleşimi</text>
+  </g>
+</svg>
+<ul>
+  <li>Halka noktası (sx, sy), köşeleri <code>(sy, sy), (W − sy, sy), (W − sy, H − sy), (sy, H − sy)</code> olan dikdörtgene gider; komşu kenarlar köşe noktasını paylaştığı için gönye kendiliğinden oluşur (Blender'daki <code>miter_L</code> ile aynı fikir).</li>
+  <li>Her halka kenarı dört kenarda birer dörtgen (iki üçgen) verir. Normal, kesitteki dış normalin kenar yönüne döndürülmüşüdür; sarım yönü dışa bakacak şekilde seçilir, çünkü arka yüzler kesit kapağı olarak boyanır.</li>
+  <li>Süpürülen halkalar: kasa, kanat, çıta (PVC, folyolu), dört conta, çıta dudakları ve sızdırmazlık (tek koyu mesh), ısıcam ara çıtaları. Cam üç tam panel; numunenin cam parçaları bu kipte gizlenir.</li>
+  <li><code>aAxis</code> özniteliği yatay/düşey profili bildirir; ahşap damarı ve kalıp izi doğru yöne döner.</li>
+  <li>İşaretler: drenaj yarıkları ve çift açılım donanımı derinlik testsiz bilgi kutularıdır; menteşe silindir, kol üç kutudur (biçimler temsilidir, konumlar dökümandan). Toplam 7 çizim çağrısı.</li>
+  <li>Pencere kipinde patlatma, kesit ve ölçüler kapalıdır; diğer araçlar önce köşeye döner. Gölgelendiriciler açılışta önceden derlenir.</li>
+</ul>
+
+<h2 id="s6-5">6.5 Diğer özellikler</h2>
+<table>
+  <thead><tr><th style="width:22%">Özellik</th><th>Uygulama</th></tr></thead>
+  <tbody>
+    <tr><td>Üretim hikâyesi</td><td>6 adım (ekstrüzyon 0 sn, 45° kesim 6, takviye ve vidalar 11, kaynak 240–280 °C 19, köşe temizleme 31, montaj 35), 46 sn. Kaynaklı kasa, üçgen ağırlık merkezine göre (x ≥ y) köşe özniteliklerini paylaşan iki geçici kol mesh'ine bölünür; ısıtıcı plaka, gönye ısınması (<code>uHeat</code>), kaynak taşıntısı (dış halkadan tüp). Adıma atlanabilir (durum her adımda baştan kurulur).</td></tr>
+    <tr><td>Röntgen merceği</td><td>Ekranda sürüklenen daire; içinde PVC çizilmez (<code>SUP_LENS</code>), çelik, vida, conta, takoz ve cam görünür; seçim mercek içindeki PVC'yi atlar.</td></tr>
+    <tr><td>Kamara sayacı</td><td>Kasa 14, kanat 11 kamara, serbest uçta sırayla renklenir ve numaralanır; <code>ShapeUtils</code> ile üçgenlenmiş tek mesh.</td></tr>
+    <tr><td>Su tahliyesi</td><td>s.9'daki 42 su okundan çıkarılan 3B yol; damlalar tek <code>InstancedMesh</code>, akış şeridi tek mesh.</td></tr>
+    <tr><td>Çizim bindirme</td><td>s.9 çizgileri uç kesitte 1:1; model ile döküman örtüşmesi ziyaretçiye gösterilir.</td></tr>
+    <tr><td>Renk perdesi</td><td>Ekranı dikey bölen sürüklenebilir perde; iki renk seti tek geçişte.</td></tr>
+  </tbody>
+</table>
+<div class="grid3">
+  <figure><img src="img/06_uretim_kaynak.jpg"><figcaption>Üretim hikâyesi: kaynak adımı.</figcaption></figure>
+  <figure><img src="img/07_rontgen.jpg"><figcaption>Röntgen merceği.</figcaption></figure>
+  <figure><img src="img/08_kamara.jpg"><figcaption>Kamara sayacı (14 / 11).</figcaption></figure>
+  <figure><img src="img/05_su_tahliyesi.jpg"><figcaption>Su tahliyesi (tur bölümü).</figcaption></figure>
+  <figure><img src="img/03_cizim_bindirme.jpg"><figcaption>Ölçüler ve çizim bindirme.</figcaption></figure>
+  <figure><img src="img/09_renk_perdesi.jpg"><figcaption>Renk perdesi.</figcaption></figure>
+</div>
+
+<!-- ================================================================ 7 -->
+<h1 id="s7"><span class="num">7</span>Performans ve bütçe</h1>
+<div class="kpi">
+  <div><b>84.880</b><span>üçgen · duruş (27 çağrı)</span></div>
+  <div><b>94.800</b><span>üçgen · en yoğun (31 çağrı)</span></div>
+  <div><b>150.000</b><span>üçgen sınırı</span></div>
+  <div><b>50</b><span>çizim çağrısı sınırı</span></div>
+</div>
+<h2 id="s7-1">7.1 Ölçülen durumlar</h2>
+<p>Değerler <code>docs/budget.mjs</code> ile ölçülür: 1600 × 900 görünüm, piksel oranı 1, her durumda çizilen karenin <code>renderer.info</code> sayıları.</p>
+<table>
+  <thead><tr><th>Durum</th><th class="r">Üçgen</th><th class="r">Çizim çağrısı</th></tr></thead>
+  <tbody>
+    <tr><td>Duruş (açılış görünümü)</td><td class="r">84.880</td><td class="r">27</td></tr>
+    <tr><td>Kesit açık: X = 150 ya da gönye (canlı kesitle)</td><td class="r">84.882</td><td class="r">29</td></tr>
+    <tr><td>Isı haritası (kamara dolgusuyla)</td><td class="r">86.086</td><td class="r">28</td></tr>
+    <tr><td>Isı haritası + kesit X = 150 + ölçüm</td><td class="r">86.088</td><td class="r">30</td></tr>
+    <tr><td>Tam pencere, içe açılır 1200 × 1400</td><td class="r">91.202</td><td class="r">30</td></tr>
+    <tr><td>Tam pencere, çift açılım 900 × 1300</td><td class="r">90.950</td><td class="r">29</td></tr>
+    <tr><td>En yoğun: su animasyonu + çizim bindirme + ölçüler + işaretler</td><td class="r">94.800</td><td class="r">31</td></tr>
+    <tr><td>Düz kesit sayfası (<code>kesit.html</code>), açılış</td><td class="r">74.738</td><td class="r">23</td></tr>
+  </tbody>
+</table>
+<h2 id="s7-2">7.2 Tur bölümleri</h2>
+<p>Test, her bölüme gidip kamera ve patlatma animasyonu bittikten sonraki en yüksek değeri kaydeder:</p>
+<table>
+  <thead><tr><th>Bölüm</th><th class="r">Üçgen</th><th class="r">Çağrı</th><th>Bölüm</th><th class="r">Üçgen</th><th class="r">Çağrı</th></tr></thead>
+  <tbody>
+    <tr><td>1 Genel</td><td class="r">85K</td><td class="r">27</td><td>7 Su tahliyesi</td><td class="r">65K</td><td class="r">11</td></tr>
+    <tr><td>2 Kaynak yüzü</td><td class="r">85K</td><td class="r">29</td><td>8 Üçlü ısıcam</td><td class="r">16K</td><td class="r">10</td></tr>
+    <tr><td>3 Çok odacıklı kesit</td><td class="r">86K</td><td class="r">28</td><td>9 Üretim hikâyesi</td><td class="r">12K</td><td class="r">2</td></tr>
+    <tr><td>4 Isı akışı haritası</td><td class="r">86K</td><td class="r">28</td><td>10 Renk seçenekleri</td><td class="r">85K</td><td class="r">27</td></tr>
+    <tr><td>5 Röntgen: çelik</td><td class="r">85K</td><td class="r">27</td><td>11 Köşeden pencereye</td><td class="r">91K</td><td class="r">30</td></tr>
+    <tr><td>6 Üç conta hattı</td><td class="r">85K</td><td class="r">27</td><td>12 Final</td><td class="r">85K</td><td class="r">27</td></tr>
+  </tbody>
+</table>
+<h2 id="s7-3">7.3 Dosya boyutları</h2>
+<table>
+  <thead><tr><th>Dosya</th><th class="r">Boyut</th><th>Not</th></tr></thead>
+  <tbody>
+    <tr><td><code>js/kose.js</code></td><td class="r">{{KB:site/js/kose.js}}</td><td>three.js alt kümesi dahil tek paket</td></tr>
+    <tr><td><code>assets/kose/supremo85_kose.glb</code></td><td class="r">{{KB:site/assets/kose/supremo85_kose.glb}}</td><td>meshopt, 26 parça</td></tr>
+    <tr><td><code>assets/kose/ao_kose.ktx2</code> · <code>studio2.ktx2</code> · <code>ahsap.ktx2</code> · <code>isi.ktx2</code></td><td class="r">{{KB:site/assets/kose/ao_kose.ktx2}} · {{KB:site/assets/kose/studio2.ktx2}} · {{KB:site/assets/kose/ahsap.ktx2}} · {{KB:site/assets/kose/isi.ktx2}}</td><td>3.4'e bakınız</td></tr>
+    <tr><td><code>vendor/basis/</code></td><td class="r">{{KB:site/vendor/basis/basis_transcoder.wasm}} + {{KB:site/vendor/basis/basis_transcoder.js}}</td><td>KTX2 dönüştürücü (wasm + js)</td></tr>
+    <tr><td><code>assets/kose/assets-embedded.js</code></td><td class="r">{{KB:site/assets/kose/assets-embedded.js}}</td><td>yalnız file:// açılışında yüklenir</td></tr>
+  </tbody>
+</table>
+<div class="note"><p><strong>Boşta çizim yok:</strong> hiçbir şey değişmiyorsa kare çizilmez (4.2). 360° döner tabla açıkken sürekli çizilir; kalite kademesi bu durumda devreye girer. Performans panelindeki <em>Performans testi</em> 6 sn boyunca patlatma ve kesiti değiştirerek ortalama ve %1 düşük FPS ölçer.</p></div>
+
+<!-- ================================================================ 8 -->
+<h1 id="s8"><span class="num">8</span>Test ve doğrulama</h1>
+<h2 id="s8-1">8.1 Tarayıcı testleri</h2>
+<p>Testler Xvfb altında gerçek bir Chromium ile, yazılımsal GL (llvmpipe, ANGLE-GL) üzerinde çalışır; aynı test http'de ve file:// ile ayrı ayrı koşturulur.</p>
+<table>
+  <thead><tr><th style="width:30%">Test</th><th>Kapsam</th><th class="r">Sonuç</th></tr></thead>
+  <tbody>
+    <tr><td><code>interaction_test_kose.mjs</code></td><td>Yükleme, parça listesi, seçim, izolasyon, patlatma, dört eksende kesit, ölçüler ve çizim, 360°, renkler, iki renk ve perde, teknik özellikler ve ift kartı, klavye (Türkçe Q), işaretler, tur bölümleri (kaynak, su, hikâye, kamara, ısı, röntgen, pencere), ısı haritası, canlı kesit etiketleri, ölçüm (85,0 mm), pencere kipi (1200 × 1400 içe açılır; 800 × 1000 çift açılım), bütçe (her tur bölümü ve en yoğun durum), sayfa geçişi, çevrimdışılık, kiosk (açılışta dokunma, tanıtım, tanıtım ekranının görünürlüğü, uyanma, parametre taşıma), konsol hataları</td><td class="r">63 / 63<br>http ve file://</td></tr>
+    <tr><td><code>interaction_test.mjs</code></td><td>Düz kesit sayfası</td><td class="r">20 / 20</td></tr>
+    <tr><td><code>test_configurator.mjs</code></td><td>Tarayıcısız (Node): s.5, s.8, s.10, s.11, s.17, s.24 kuralları; sınır değerler (499/500, 999/1000, 1099/1100, 1399/1400, 920/921, 2300/2301, 1475/1476 mm); aralık dışı uyarılar; yarık yerlerinin <code>kose_info.json</code> ile tutarlılığı</td><td class="r">23 / 23</td></tr>
+  </tbody>
+</table>
+<pre><code># yerel sunucu
+cd output/site &amp;&amp; python3 -m http.server 8091 --bind 127.0.0.1
+# köşe (http ve file://), düz kesit
+xvfb-run -a node interaction_test_kose.mjs http://127.0.0.1:8091/index.html ./shots_kose
+xvfb-run -a node interaction_test_kose.mjs file:///.../output/site/index.html ./shots_kose_file
+xvfb-run -a node interaction_test.mjs http://127.0.0.1:8091/kesit.html ./shots_duz
+node test_configurator.mjs</code></pre>
+<h2 id="s8-2">8.2 Veri denetimleri</h2>
+<ul>
+  <li><strong>Montaj</strong> (3.2): 2B ve 3B temas/kesişim raporu.</li>
+  <li><strong>Isı</strong> (6.1): enerji dengesi, ızgara yakınsaması, Uf iç karşılaştırması.</li>
+  <li><strong>Su yolu:</strong> yolun kesit poligonlarının içinden geçmediği denetlenir.</li>
+  <li><strong>Bindirme görselleri</strong> (2.3): kesit poligonları ve 3B uç kesit s.9 çizimiyle.</li>
+</ul>
+<h2 id="s8-3">8.3 Test ortamı notları</h2>
+<ul>
+  <li>Chromium bayrakları: <code>--use-gl=angle --use-angle=gl --ignore-gpu-blocklist --disable-gpu-watchdog</code>. Yazılımsal GL'de tek bir kare saniyeler sürebildiği için GPU gözetçisi kapatılır; gerçek GPU'da gerekmez. <code>SOFT_GL=swiftshader</code> ile SwiftShader kullanılabilir.</li>
+  <li>Yazılımsal GL'de yüklemeden sonra 5–8 sn'lik bir takılma olur (ilk kareler ve sürücü derlemesi). Testler ve ekran görüntüsü betikleri bu yüzden ısınma süresi bekler; kamera animasyonları ve geçişler için sabit bekleme yerine durum beklenir.</li>
+  <li>Durum denetimi görüntüyü garanti etmez. Kiosk tanıtımında ekranın boş kaldığı bir hata durum kontrollerinden geçti; bu belgenin ekran görüntüleri alınırken fark edildi (bkz. 10.4). Düzeltmeyle birlikte teste, tanıtım ekranında sahnenin ve kartların gerçekten görünür olduğunu denetleyen bir kontrol eklendi.</li>
+</ul>
+
+<!-- ================================================================ 9 -->
+<h1 id="s9"><span class="num">9</span>Derleme, yeniden üretim ve dağıtım</h1>
+<h2 id="s9-1">9.1 Gereksinimler</h2>
+<p>Python 3.11 ve <code>pip install bpy pymupdf shapely scipy pillow</code>; KTX-Software 4.3 (<code>ktx</code>); Node ve <code>@gltf-transform/cli</code>, <code>esbuild</code>, <code>playwright-core</code>; testler için Xvfb ve Chromium.</p>
+<h2 id="s9-2">9.2 Köşe numunesini baştan üretmek</h2>
+<pre><code>cd output/source
+python3 scripts/final2d.py                                  # section_mm.json (s.9 vektörleri)
+python3 scripts/build_corner.py                             # supremo85_kose.blend + kose_info.json
+BLEND=supremo85_kose.blend OUT=assembly_check_kose.json python3 scripts/check_assembly.py
+CHECK=assembly_check_kose.json OUT=montaj_denetimi_kose.md python3 scripts/assembly_report.py
+CORNER=1 BLEND=supremo85_kose.blend PREFIX=kose_ GLB_OUT=supremo85_kose_raw.glb python3 scripts/bake_ao.py
+gltf-transform meshopt bake/supremo85_kose_raw.glb ../site/assets/kose/supremo85_kose.glb \
+  --quantization-volume scene --quantize-position 16 --quantize-normal 12 --quantize-texcoord 14
+ktx create --encode basis-lz ... bake/kose_ao_packed.png ../site/assets/kose/ao_kose.ktx2
+python3 scripts/render_studio_hdri.py env/studio2.ktx2      # stüdyo HDRI v2 (Cycles)
+python3 scripts/make_wood_decor.py tex/ahsap.png            # + ktx create → ahsap.ktx2
+python3 scripts/extract_drawing_lines.py                    # drawing-data.js
+python3 scripts/extract_water_path.py                       # water-path.js
+python3 scripts/extract_rings.py                            # rings-data.js, chambers-data.js
+KTX=&lt;ktx yolu&gt; python3 scripts/thermal_section.py         # isi.ktx2, thermal-data.js (~1 dk)
+viewer-kose/build-vendor.sh                                 # yalnız three.js alt kümesi değişirse
+viewer-kose/build.sh                                        # js/kose.js + assets-embedded.js</code></pre>
+<p class="small muted">Adımların ayrıntıları ve düz kesit için aynı zincir <code>output/source/README.md</code>'dedir.</p>
+<h2 id="s9-3">9.3 Dağıtım ve adres parametreleri</h2>
+<p>Teslim edilen şey <code>output/site/</code> klasörüdür. <code>başlat.bat</code> / <code>başlat.command</code> yerel sunucuyu açıp tarayıcıyı başlatır (Python, Node, PowerShell ya da Perl, hangisi varsa); <code>kiosk-başlat.*</code> tarayıcıyı tam ekran kiosk modunda <code>?kiosk=1</code> ile açar ve çeviri ile "geri yükle" uyarılarını kapatır. Sunucusuz açılış için <code>index.html</code>'e çift tıklamak yeterlidir.</p>
+<table>
+  <thead><tr><th style="width:22%">Parametre</th><th>Etki</th></tr></thead>
+  <tbody>
+    <tr><td><code>?kiosk=1</code></td><td>Kiosk modu (4.7)</td></tr>
+    <tr><td><code>&amp;idle=60</code></td><td>Tanıtıma geçiş süresi (sn, en az 15; varsayılan 90)</td></tr>
+    <tr><td><code>&amp;reload=6</code></td><td>Tanıtımdayken 6 saatte bir yeniden yükleme</td></tr>
+    <tr><td><code>&amp;fs=0</code></td><td>Tam ekran isteme</td></tr>
+    <tr><td><code>&amp;q=low|high</code></td><td>Kalite kademesini zorla</td></tr>
+    <tr><td><code>&amp;dpr=1</code></td><td>Piksel oranı üst sınırı</td></tr>
+    <tr><td><code>&amp;aa=0</code></td><td>Kenar yumuşatmayı kapat</td></tr>
+    <tr><td><code>&amp;intro=0</code>, <code>&amp;spin=0</code></td><td>Açılış sinematiği ve otomatik 360° yok (testler, ekran görüntüleri)</td></tr>
+    <tr><td><code>&amp;attract=1</code></td><td>Kiosk yeniden yüklemesinden sonra doğrudan tanıtım (sayfanın kendisi ekler)</td></tr>
+  </tbody>
+</table>
+<h2 id="s9-4">9.4 Yeni özellik eklerken</h2>
+<ul>
+  <li>Modül deseni: <code>constructor(app)</code>, <code>app.onFrame((now, dt) =&gt; this.step(dt))</code>; <code>step()</code> animasyon sürdükçe <code>true</code> döner; değişiklikten sonra <code>app.requestRender()</code>.</li>
+  <li>Yeni gölgelendirici varyantı ekleniyorsa açılıştaki ön derlemeye dahil edin (4.1 adım 7); ilk kullanımda takılma olmasın.</li>
+  <li>Bütçeyi ölçün (<code>__viewer.lastInfo</code>) ve teste bir bütçe kontrolü ekleyin; tur bölümü ekleniyorsa <code>tour.cleanup()</code>'a kapanışını yazın.</li>
+  <li>Sayı gösteriyorsanız döküman sayfasını yazın; kaynak yoksa "varsayım" diye etiketleyip <code>ASSUMPTIONS</code>'a ekleyin.</li>
+  <li>body'ye eklenen durum sınıfları (<code>touring, attract, attract-on, kiosk, measuring, window-mode</code>) çıplak sınıf seçicisi olarak kullanılmamalı; öğe stilleri için kimlik ya da <code>body.x .y</code> biçimi kullanın (10.4).</li>
+  <li>Çift build: kaynak değiştikten sonra <code>build.sh</code>; http ve file:// testlerinin ikisini de çalıştırın.</li>
+</ul>
+
+<!-- ================================================================ 10 -->
+<h1 id="s10"><span class="num">10</span>Varsayımlar, sınırlar ve bilinen konular</h1>
+<h2 id="s10-1">10.1 Model varsayımları</h2>
+<p>Teknik özellikler kartında da listelenen varsayımlar (<code>parts-data.js</code> → <code>ASSUMPTIONS</code>):</p>
+<ul>
+  <li>Numune kolları dış köşeden 300 mm (düz numunedeki gibi).</li>
+  <li>Contalar ve ısıcam ara çıtası köşede gönyeli gösterilmiştir.</li>
+  <li>Takoz köprüsü 70 mm, konumu varsayım; rüzgarlık ölçüsü varsayım.</li>
+  <li>Yarık konumları için iç köşe referansı dış görünüş çizgisi alınmıştır (kasa 74, kanat 102 mm).</li>
+  <li>Kaynak dikişi ve renk seçenekleri görsel amaçlıdır.</li>
+  <li>Kasa takviyesi iki uçta eşit geri çekilmiştir (A − 153 → 76,5 mm).</li>
+  <li>Vida baş ölçüleri standart değerlerdir (DIN 7504); döküman baş ölçüsü vermez.</li>
+  <li>Isı haritası gösterim amaçlıdır; resmi değer ift belgesindeki Uf = 1,0 W/(m²K)'dir.</li>
+</ul>
+<h2 id="s10-2">10.2 Döküman içi farklar</h2>
+<table>
+  <thead><tr><th style="width:26%">Konu</th><th>Fark</th><th>Projedeki karar</th></tr></thead>
+  <tbody>
+    <tr><td>Takviye vidası boyu</td><td>s.10 / s.11: 3,9 × 19; s.32 tablosu: 3,9 × 22 YSB ve 3,9 × 25 YHB</td><td>s.10/s.11 kullanılır; bilgi panelinde not</td></tr>
+    <tr><td>Kasa takviyesi başlangıcı</td><td>s.10 çiziminde uçtan 68 mm; A − 153'ün simetrik okunuşu 76,5 mm</td><td>76,5 mm modellenir; iki değer de gösterilir</td></tr>
+    <tr><td>Eğik yarık açısı</td><td>s.8 metni 60°, kasa çizimi 50°</td><td>Kasada çizimdeki 50°, kanatta 60°</td></tr>
+    <tr><td>OR 800/0 kodu</td><td>s.24'te 501110154 (diğer kodlardan bir basamak eksik görünür)</td><td>Dökümandaki haliyle gösterilir</td></tr>
+    <tr><td>Sınır değerler</td><td>Tablolar sınırları tanımlamaz ("A &lt; 1100", "1101 &lt; A")</td><td>Sınırda üst sınıf</td></tr>
+  </tbody>
+</table>
+<h2 id="s10-3">10.3 Sınırlar ve kapsam dışı</h2>
+<ul>
+  <li><strong>Yapılandırıcı:</strong> yalnız tek kanatlı içe açılır ve çift açılım. Sabit cam, kayıt (orta dikme) ve kapı tipleri yok; dökümanda kesit geometrileri yok. Çıta ve conta boyları dökümanda olmadığı için verilmez. Tam pencerede pişirilmiş AO yoktur (numune köşesinde vardır).</li>
+  <li><strong>Isı haritası:</strong> 2B hesap iki kola uzatılır; köşedeki 3B ısı akışı gösterilmez. Açık hava boşlukları (lamba) boyanmaz.</li>
+  <li><strong>Kullanıcı kararıyla kapsam dışı:</strong> dil seçimi, operatör paneli ve istatistikler, sinematik tanıtım v2, poster/video dışa aktarma, QR/AR, tablet kumanda, ziyaretçi formu, ek ışık ortamları.</li>
+</ul>
+<h2 id="s10-4">10.4 Düzeltilen önemli hatalar</h2>
+<table>
+  <thead><tr><th style="width:30%">Hata</th><th>Neden ve düzeltme</th></tr></thead>
+  <tbody>
+    <tr><td>Kiosk tanıtımında boş ekran</td><td>Tur, tanıtımda body'ye <code>attract</code> sınıfını ekler; çağrı öğesi için yazılmış <code>.attract { position: fixed; left: 50%; … transform }</code> kuralı body'ye de uydu. Body sabit konumlu, sıfır boyutlu bir kutuya döndü ve tüm sabit öğeleri (sahne dahil) kendine bağladı; tanıtım döngüsü boş göründü. Seçici <code>#attract</code> yapıldı; test artık tanıtım ekranının görünürlüğünü denetliyor.</td></tr>
+    <tr><td>Açılışta dokunulunca kiosk kilidi</td><td>Açılış durumu yalnız kamera animasyonunun bitişinde kapanıyordu; animasyon kesilince hiç kapanmıyordu. Kesilme, değişme ve süre dolması durumlarında kapanır.</td></tr>
+    <tr><td>Bütçe aşımı (~156K / 48)</td><td>Saydam, çift yüzlü hayalet malzemesi iki geçişte çiziliyordu; <code>forceSinglePass</code>.</td></tr>
+    <tr><td>Lekeli ahşap deseni</td><td>Nicemlenmiş nesne uzayı; <code>uODeq</code> açılımı (5.3).</td></tr>
+    <tr><td>Tırtıklı eş sıcaklık çizgileri</td><td>8 bit dokuda düzlükler; R16F ve yarım basamak (6.1).</td></tr>
+  </tbody>
+</table>
+
+<!-- ================================================================ 11 -->
+<h1 id="s11"><span class="num">11</span>Ekler</h1>
+<h2 id="s11-1">11.1 Commit geçmişi</h2>
+<table>
+  <thead><tr><th style="width:12%">Commit</th><th style="width:14%">Tarih</th><th>Konu</th></tr></thead>
+  <tbody>
+{{COMMITS}}
+  </tbody>
+</table>
+<h2 id="s11-2">11.2 Betikler</h2>
+<table class="long">
+  <thead><tr><th style="width:32%">Betik</th><th>Görev</th><th class="r">Satır</th></tr></thead>
+  <tbody>
+    <tr><td><code>extract.py · extract2.py · extract3.py · build2d.py · final2d.py</code></td><td>s.9 vektörlerinden <code>section_mm.json</code></td><td class="r">{{LINES:source/scripts/extract.py,source/scripts/extract2.py,source/scripts/extract3.py,source/scripts/build2d.py,source/scripts/final2d.py}}</td></tr>
+    <tr><td><code>build_model.py</code></td><td>Düz numune (Blender)</td><td class="r">{{LINES:source/scripts/build_model.py}}</td></tr>
+    <tr><td><code>build_corner.py</code></td><td>Köşe numunesi (Blender)</td><td class="r">{{LINES:source/scripts/build_corner.py}}</td></tr>
+    <tr><td><code>check_assembly.py · assembly_report.py</code></td><td>Montaj denetimi ve raporu</td><td class="r">{{LINES:source/scripts/check_assembly.py,source/scripts/assembly_report.py}}</td></tr>
+    <tr><td><code>bake_ao.py</code></td><td>UV atlası, Cycles AO, GLB</td><td class="r">{{LINES:source/scripts/bake_ao.py}}</td></tr>
+    <tr><td><code>render_studio_hdri.py · make_studio_hdri.py</code></td><td>Stüdyo HDRI v2 (Cycles) ve v1 (prosedürel)</td><td class="r">{{LINES:source/scripts/render_studio_hdri.py,source/scripts/make_studio_hdri.py}}</td></tr>
+    <tr><td><code>make_wood_decor.py · make_spangle.py</code></td><td>Ahşap ve galvaniz desenleri</td><td class="r">{{LINES:source/scripts/make_wood_decor.py,source/scripts/make_spangle.py}}</td></tr>
+    <tr><td><code>extract_drawing_lines.py · extract_water_path.py · extract_rings.py</code></td><td>Görüntüleyiciye gömülen veriler</td><td class="r">{{LINES:source/scripts/extract_drawing_lines.py,source/scripts/extract_water_path.py,source/scripts/extract_rings.py}}</td></tr>
+    <tr><td><code>thermal_section.py</code></td><td>Isı hesabı ve doku</td><td class="r">{{LINES:source/scripts/thermal_section.py}}</td></tr>
+    <tr><td><code>preview_corner.py · preview_render.py · overlay_3d.py</code></td><td>Cycles önizlemeleri, 3B bindirme</td><td class="r">{{LINES:source/scripts/preview_corner.py,source/scripts/preview_render.py,source/scripts/overlay_3d.py}}</td></tr>
+    <tr><td><code>interaction_test_kose.mjs · interaction_test.mjs · test_configurator.mjs</code></td><td>Testler</td><td class="r">{{LINES:source/scripts/interaction_test_kose.mjs,source/scripts/interaction_test.mjs,source/scripts/test_configurator.mjs}}</td></tr>
+    <tr><td><code>kiosk_soak.mjs · bench.mjs</code></td><td>Kiosk dayanıklılık, performans ölçümü</td><td class="r">{{LINES:source/scripts/kiosk_soak.mjs,source/scripts/bench.mjs}}</td></tr>
+  </tbody>
+</table>
+<h2 id="s11-3">11.3 Terimler</h2>
+<table>
+  <thead><tr><th>Türkçe</th><th>İngilizce</th><th>Türkçe</th><th>İngilizce</th></tr></thead>
+  <tbody>
+    <tr><td>Kasa</td><td>Frame</td><td>Kanat</td><td>Sash / casement</td></tr>
+    <tr><td>Cam çıtası</td><td>Glazing bead</td><td>Takviye (destek sacı)</td><td>Steel reinforcement</td></tr>
+    <tr><td>Gönye</td><td>Miter (45° corner)</td><td>Kamara</td><td>Chamber</td></tr>
+    <tr><td>Lamba</td><td>Rebate</td><td>Rüzgarlık</td><td>Drainage cover</td></tr>
+    <tr><td>Isıcam</td><td>Insulating glass unit</td><td>Ara çıta</td><td>Spacer</td></tr>
+    <tr><td>Nem alıcı</td><td>Desiccant</td><td>Takoz</td><td>Glazing block</td></tr>
+    <tr><td>İspanyolet</td><td>Espagnolette</td><td>Makas</td><td>Stay / scissor arm</td></tr>
+    <tr><td>Menteşe</td><td>Hinge</td><td>Kayıt</td><td>Mullion / transom</td></tr>
+    <tr><td>İçe açılır</td><td>Side-hung, inward opening</td><td>Çift açılım</td><td>Tilt and turn</td></tr>
+  </tbody>
+</table>
+<h2 id="s11-4">11.4 Lisanslar</h2>
+<p>three.js ve three-mesh-bvh: MIT (<code>vendor/LICENSE-*</code>). Inter yazı tipi: SIL Open Font License (<code>fonts/</code>). Basis Universal dönüştürücü: Apache-2.0.</p>
+
+</body>
+</html>
