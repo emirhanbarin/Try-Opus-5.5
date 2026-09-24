@@ -88,8 +88,8 @@ cat Supremo85_proje_yedegi.bundle.parca1 Supremo85_proje_yedegi.bundle.parca2 \
 copy /b Supremo85_proje_yedegi.bundle.parca1+Supremo85_proje_yedegi.bundle.parca2 ^
   Supremo85_proje_yedegi.bundle
 
-git bundle verify Supremo85_proje_yedegi.bundle
 git clone Supremo85_proje_yedegi.bundle Supremo85 -b claude/festive-noether-f394lu
+git -C Supremo85 log --oneline -3                # son commit'ler görünmeli
 # yeni bir GitHub deposuna göndermek için (isteğe bağlı)
 cd Supremo85
 git remote set-url origin &lt;yeni depo adresi&gt;
