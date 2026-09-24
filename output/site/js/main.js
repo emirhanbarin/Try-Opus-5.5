@@ -497,7 +497,7 @@ function updateDimLabels() {
 // ------------------------------------------------------------------ camera views
 // r: görünümde sığdırılacak yarıçap (m)
 const VIEWS = {
-  persp:    { dir: [-1.18, 0.58, 0.9], r: 0.128, target: [0.004, 0.096, 0] },
+  persp:    { dir: [-1.18, 0.58, 0.9], r: 0.138, target: [0.004, 0.092, 0] },
   end:      { dir: [-1, 0.06, 0.03], r: 0.104, target: [-0.15, 0.1, 0.0], fov: 12 },
   dims:     { dir: [-1, 0.04, 0.02], r: 0.132, target: [-0.15, 0.1, 0.0], fov: 12 },
   interior: { dir: [0.08, 0.18, 1], r: 0.165, target: [0, 0.094, 0] },
