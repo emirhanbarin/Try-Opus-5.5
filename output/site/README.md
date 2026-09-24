@@ -35,7 +35,8 @@ Tarayıcı: WebGL 2 destekli güncel Chrome, Edge, Firefox veya Safari (16.4+).
 - **Dokunmatik:** tek parmakla döndür, iki parmakla yakınlaştır/kaydır, parçaya dokun. Düğmeler büyür; sağ tık, metin seçimi ve sayfa yakınlaştırma kapalıdır; fare imleci 3 sn sonra gizlenir.
 - **Operatör:** çıkış Alt+F4 (Windows) / ⌘Q (macOS). Sağ üst köşeye 3 sn içinde 5 kez dokunmak performans panelini açar.
 - **Adres seçenekleri:** `&idle=60` (tanıtıma geçiş süresi, sn), `&reload=6` (tanıtımdayken 6 saatte bir yenileme), `&fs=0` (tam ekran isteme), `&q=low` (düşük kalite kademesi), `&dpr=1` (piksel oranı üst sınırı).
-- **Windows önerileri:** Ayarlar → Sistem → Güç bölümünde ekran ve uyku için **Hiçbir zaman** seçin. Açılışta otomatik başlatmak için `Win + R` → `shell:startup` klasörüne `kiosk-başlat.bat` kısayolu koyun. Grafik bağlamı kaybolursa sayfa kendini yeniden yükler.
+- **Windows önerileri:** Ayarlar → Sistem → Güç bölümünde ekran ve uyku için **Hiçbir zaman** seçin. Açılışta otomatik başlatmak için `Win + R` → `shell:startup` klasörüne `kiosk-başlat.bat` kısayolu koyun.
+- **Kendini toparlama:** Grafik bağlamı kaybolursa, yükleme başarısız olursa (20 sn sonra) ya da planlı yenilemede sayfa kendini yeniden yükler ve doğrudan tanıtımla açılır. Tanıtıma her girişte görüntü kalitesi yeniden denenir; tanıtımda sabit başlık soluklaşır ve yavaşça kayar (OLED ekran izi). Başlatıcılar tarayıcının çeviri ve "geri yükle" uyarılarını kapatır.
 
 ## Kullanım (köşe kesiti)
 
@@ -56,7 +57,7 @@ Tarayıcı: WebGL 2 destekli güncel Chrome, Edge, Firefox veya Safari (16.4+).
 ## Teknik özet
 
 **Köşe kesiti:**
-- **Parçalar:** 26 obje: 45° kaynaklı kasa ve kanat, cam çıtası ve dudakları, 4 conta, 4 galvaniz takviye (kasa A − 153, kanat A − 160 mm), 4 adet 3,9 × 19 YHB vida (kasa uçtan 150, kanat 120 mm), üç panel ısıcam (ara çıta, nem alıcı, ikincil sızdırmazlık), takoz köprüsü, drenaj yarıkları (A, B, C, D-E: 32 × Ø4 mm; iç köşeden 10 · 32 · 70 · 32 mm, eğik yarıklar kasada 50°, kanatta 60°) ve rüzgarlık.
+- **Parçalar:** 26 obje: 45° kaynaklı kasa ve kanat, cam çıtası ve dudakları, 4 conta, 4 galvaniz takviye (kasa A − 153, kanat A − 160 mm), 4 vida: kasada 3,9 × 19 YSB silindir baş (uçtan 150 mm, s.10), kanatta 3,9 × 19 YHB havşa baş (iç köşeden 120 mm, s.11), üç panel ısıcam (ara çıta, nem alıcı, ikincil sızdırmazlık), takoz köprüsü, drenaj yarıkları (A, B, C, D-E: 32 × Ø4 mm; iç köşeden 10 · 32 · 70 · 32 mm, eğik yarıklar kasada 50°, kanatta 60°) ve rüzgarlık.
 - **Geometri:** 84.472 üçgen, 27 çizim çağrısı; en yoğun durumda (su animasyonu, çizim bindirme) 94.392 üçgen ve 31 çağrı. Meshopt + 16 bit nicemleme (`assets/kose/supremo85_kose.glb`, 662 KB).
 - **Dokular (KTX2):** AO atlası 2048² (montaj + parça AO), stüdyo HDRI v2 1024 × 512 RGBA16F (Blender/Cycles'ta modellenmiş stüdyo), ahşap folyo deseni 2048 × 512, galvaniz deseni 1024².
 - **Görüntü:** Khronos PBR Neutral ton eşleme, kamerayla dönen stüdyo ışığı, yakın planda ekstrüzyon kalıp izleri ve EPDM greni, gönyede kaynak dikişi çizgisi, zemin ışık havuzu ve temas gölgesi. Son işlem (post-processing) ve gerçek zamanlı gölge yoktur.

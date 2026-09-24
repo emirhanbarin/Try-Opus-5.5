@@ -33,17 +33,17 @@ export const PARTS = [
   {
     id: 'kasa_profili', name: 'Kasa profili (45° kaynaklı)', group: 'profil', mat: 'pvc', foil: true, seam: 1,
     info: 'İki kasa kolu 45° kesilip ısıtıcı plakayla birbirine kaynatılmıştır; köşe tek parça, kapalı bir profil olur. Kesitte 14 kapalı kamara, ana kamarada galvaniz takviye, dış tarafta drenaj kamaraları bulunur.',
-    dims: [['Sistem derinliği', '85 mm (s.9)'], ['Dış görünür yükseklik', '74 mm (s.9)'], ['İç görünür yükseklik', '40 mm (s.9)'], ['Köşe kesimi', '45° (s.6)'], ['Kamara sayısı', '14 (s.9 çizimi)']],
+    dims: [['Profil kodu', 'BF 8581 · 74 × 85 mm (ift belgesi)'], ['Sistem derinliği', '85 mm (s.9)'], ['Dış görünür yükseklik', '74 mm (s.9)'], ['İç görünür yükseklik', '40 mm (s.9)'], ['Köşe kesimi', '45° (s.6)'], ['Kamara sayısı', '14 (s.9 çizimi)']],
     assembly: 'Kaynak plakası 240–280 °C; profilleri sabitlemek için kaynak destek plakaları kullanılır (s.14). Kaynak sonrası köşe temizlenir.',
-    source: 'PDF s.6 Profil kesimi · s.9 Su tahliye görünümü · s.14 Kaynak kuralları',
+    source: 'PDF s.6 Profil kesimi · s.9 Su tahliye görünümü · s.14 Kaynak kuralları · ift test belgesi 25-002770-PR01',
     explode: [],
   },
   {
     id: 'kanat_profili', name: 'Kanat profili (45° kaynaklı)', group: 'profil', mat: 'pvc', foil: true, seam: 1,
     info: 'Kanat da köşede 45° kaynaklıdır. 11 kamara; cam yuvası tabanında takoz köprüsü yeri, dış cam dudağında conta yuvası ve cam çıtası klips kanalı bulunur.',
-    dims: [['Profil yüksekliği', '84 mm (s.9)'], ['Kasa ile kaçıklık', '19,5 mm; toplam 104,5 mm (s.9)'], ['Köşe kesimi', '45° (s.6)'], ['Kamara sayısı', '11 (s.9 çizimi)']],
+    dims: [['Profil kodu', 'BF 8582 · 84 × 85 mm (ift belgesi)'], ['Profil yüksekliği', '84 mm (s.9)'], ['Kasa ile kaçıklık', '19,5 mm; toplam 104,5 mm (s.9)'], ['Köşe kesimi', '45° (s.6)'], ['Kamara sayısı', '11 (s.9 çizimi)']],
     assembly: 'Kasaya kapanırken dış, orta ve iç olmak üzere üç conta hattına basar.',
-    source: 'PDF s.6 · s.9 · s.14',
+    source: 'PDF s.6 · s.9 · s.14 · ift test belgesi 25-002770-PR01',
     explode: [S],
   },
   {
@@ -96,16 +96,16 @@ export const PARTS = [
   },
   {
     id: 'kasa_celik_takviye_alt', name: 'Kasa takviyesi (alt kol)', group: 'takviye', mat: 'steel',
-    info: 'Kasa ana kamarasına boyuna sürülen galvaniz U profil. Kaynak bölgesine girmez: takviye boyu kasa boyundan 153 mm kısadır, köşeden 76,5 mm geride başlar.',
-    dims: [['Kesit', '30 × 27 mm U'], ['Et kalınlığı', '1,5 mm'], ['Kesim boyu', 'Kasa boyu − 153 mm (s.10)']],
-    assembly: 'Profile boyuna sürülür, kasa altından 3,9 × 19 YHB vidayla bağlanır.',
-    source: 'PDF s.9 · s.10 Kasa ve kayıt hazırlığı',
+    info: 'Kasa ana kamarasına boyuna sürülen galvaniz U profil. Kaynak bölgesine girmez: takviye boyu kasa boyundan 153 mm kısadır (s.10). Modelde iki uçta eşit, köşeden 76,5 mm geride başlar; s.10 çiziminde uçtan 68 mm ölçüsü de görülür.',
+    dims: [['Profil', 'BF 409-15 galvaniz U (ift belgesi)'], ['Kesit', '30 × 27 mm (ift belgesi)'], ['Et kalınlığı', '1,5 mm (s.9 çiziminden ölçüldü)'], ['Kesim boyu', 'Kasa boyu − 153 mm (s.10)']],
+    assembly: 'Profile boyuna sürülür, kasa altından 3,9 × 19 YSB vidayla bağlanır (s.10).',
+    source: 'PDF s.9 · s.10 Kasa ve kayıt hazırlığı · ift belgesi',
     explode: [{ v: [190, 0, 0], t: [0.62, 1.0] }],
   },
   {
     id: 'kasa_celik_takviye_yan', name: 'Kasa takviyesi (yan kol)', group: 'takviye', mat: 'steel',
-    info: 'Yan kasa kolundaki galvaniz takviye; alt koldaki gibi köşeden 76,5 mm geride başlar.',
-    dims: [['Kesit', '30 × 27 mm U'], ['Kesim boyu', 'Kasa boyu − 153 mm (s.10)']],
+    info: 'Yan kasa kolundaki galvaniz takviye; alt koldaki gibi köşeden 76,5 mm geride başlar (A − 153, iki uçta eşit varsayımı).',
+    dims: [['Profil', 'BF 409-15 (ift belgesi)'], ['Kesit', '30 × 27 mm U (ift belgesi)'], ['Kesim boyu', 'Kasa boyu − 153 mm (s.10)']],
     assembly: 'Profile boyuna sürülür ve vidalanır.',
     source: 'PDF s.10',
     explode: [{ v: [0, 190, 0], t: [0.62, 1.0] }],
@@ -113,7 +113,7 @@ export const PARTS = [
   {
     id: 'kanat_celik_takviye_alt', name: 'Kanat takviyesi (alt kol)', group: 'takviye', mat: 'steel',
     info: 'Kanat ana kamarasındaki galvaniz U profil. Kesim boyu kanat boyundan 160 mm kısadır; köşeden 80 mm geride başlar.',
-    dims: [['Kesit', '30 × 27 mm U'], ['Et kalınlığı', '1,5 mm'], ['Kesim boyu', 'Kanat boyu − 160 mm (s.11)']],
+    dims: [['Profil', 'BF 409-15 galvaniz U (ift belgesi)'], ['Kesit', '30 × 27 mm (ift belgesi)'], ['Et kalınlığı', '1,5 mm (s.9 çiziminden ölçüldü)'], ['Kesim boyu', 'Kanat boyu − 160 mm (s.11)']],
     assembly: 'Profile boyuna sürülür, cam yuvası tabanından vidalanır.',
     source: 'PDF s.9 · s.11',
     explode: [S, { v: [190, 0, 0], t: [0.62, 1.0] }],
@@ -121,31 +121,31 @@ export const PARTS = [
   {
     id: 'kanat_celik_takviye_yan', name: 'Kanat takviyesi (yan kol)', group: 'takviye', mat: 'steel',
     info: 'Yan kanat kolundaki galvaniz takviye.',
-    dims: [['Kesit', '30 × 27 mm U'], ['Kesim boyu', 'Kanat boyu − 160 mm (s.11)']],
+    dims: [['Profil', 'BF 409-15 (ift belgesi)'], ['Kesit', '30 × 27 mm U (ift belgesi)'], ['Kesim boyu', 'Kanat boyu − 160 mm (s.11)']],
     assembly: 'Profile boyuna sürülür ve vidalanır.',
     source: 'PDF s.11',
     explode: [S, { v: [0, 190, 0], t: [0.62, 1.0] }],
   },
   {
     id: 'kasa_vidasi_alt', name: 'Kasa takviye vidası (alt)', group: 'takviye', mat: 'screw',
-    info: 'Havşa başlı yıldız (YHB) matkap uçlu vida; kasa altındaki kılavuz kanalından takviyeyi bağlar. İlk vida kasa ucundan 150 mm içeride.',
-    dims: [['Ölçü', '3,9 × 19 mm'], ['Konum', 'Uçtan 150 mm, sonra 300–400 mm arayla (s.10)']],
-    assembly: 'Baş yüzeyle aynı hizada; ucu takviye içinde kalır.',
+    info: 'Silindir başlı yıldız (YSB) matkap uçlu vida; kasa altındaki kılavuz kanalından takviyeyi bağlar. İlk vida kasa ucundan 150 mm içeride.',
+    dims: [['Ölçü', '3,9 × 19 mm YSB (s.10)'], ['Konum', 'Uçtan 150 mm, sonra 300–400 mm arayla (s.10)'], ['Döküman içi fark', 's.32 vida tablosunda kasa takviyesi için 3,9 × 22 YSB']],
+    assembly: 'Silindir başı kasa alt yüzeyine oturur, ucu takviye içinde kalır. Baş ölçüsü Ø7,5 × 2,8 mm (DIN 7504-N; varsayım).',
     source: 'PDF s.9 · s.10',
     explode: [{ v: [0, -36, 0], t: [0.55, 0.85] }],
   },
   {
     id: 'kasa_vidasi_yan', name: 'Kasa takviye vidası (yan)', group: 'takviye', mat: 'screw',
-    info: 'Yan kasa kolunda, dış yüzden takviyeye giren 3,9 × 19 YHB vida.',
-    dims: [['Ölçü', '3,9 × 19 mm'], ['Konum', 'Uçtan 150 mm (s.10)']],
-    assembly: 'Baş yüzeyle aynı hizada.',
+    info: 'Yan kasa kolunda, dış yüzden takviyeye giren 3,9 × 19 YSB silindir başlı vida.',
+    dims: [['Ölçü', '3,9 × 19 mm YSB (s.10)'], ['Konum', 'Uçtan 150 mm (s.10)']],
+    assembly: 'Silindir başı yüzeye oturur.',
     source: 'PDF s.10',
     explode: [{ v: [-36, 0, 0], t: [0.55, 0.85] }],
   },
   {
     id: 'kanat_vidasi_alt', name: 'Kanat takviye vidası (alt)', group: 'takviye', mat: 'screw',
     info: 'Cam yuvası tabanından takviyeye giren 3,9 × 19 mm YHB vida; iç köşeden 120 mm içeride.',
-    dims: [['Ölçü', '3,9 × 19 mm'], ['Konum', 'İç köşeden 120 mm, sonra 300–400 mm arayla (s.11)']],
+    dims: [['Ölçü', '3,9 × 19 mm YHB (s.11)'], ['Konum', 'İç köşeden 120 mm, sonra 300–400 mm arayla (s.11)'], ['Döküman içi fark', 's.32 vida tablosunda kanat takviyesi için 3,9 × 25 YHB']],
     assembly: 'Camlamadan önce takılır.',
     source: 'PDF s.9 · s.11',
     explode: [S, { v: [0, 24, 0], t: [0.56, 0.86] }],
@@ -153,7 +153,7 @@ export const PARTS = [
   {
     id: 'kanat_vidasi_yan', name: 'Kanat takviye vidası (yan)', group: 'takviye', mat: 'screw',
     info: 'Yan kanat kolunda cam yuvası tabanından giren 3,9 × 19 YHB vida.',
-    dims: [['Ölçü', '3,9 × 19 mm'], ['Konum', 'İç köşeden 120 mm (s.11)']],
+    dims: [['Ölçü', '3,9 × 19 mm YHB (s.11)'], ['Konum', 'İç köşeden 120 mm (s.11)']],
     assembly: 'Camlamadan önce takılır.',
     source: 'PDF s.11',
     explode: [S, { v: [24, 0, 0], t: [0.56, 0.86] }],
@@ -252,12 +252,24 @@ export const SPECS = [
   ['Camlama', '32 mm üçlü ısıcam, 4-10-4-10-4', 's.9'],
   ['Kamara sayısı', 'Kasa 14 · kanat 11 (kesit çiziminden)', 's.9'],
   ['Conta hatları', 'Dış, orta ve iç: üç sızdırmazlık hattı', 's.9'],
-  ['Çelik takviye', '30 × 27 × 1,5 mm galvaniz U; boy: kasa A − 153, kanat A − 160 mm', 's.10 · s.11'],
-  ['Takviye vidası', '3,9 × 19 YHB; kasa uçtan 150 mm, kanat 120 mm, sonra 300–400 mm arayla', 's.10 · s.11'],
-  ['Drenaj yarığı', '32 × Ø4 mm; iç ve dış kanal 70 mm aralıklı; eğik yarık kasa 50°, kanat 60°', 's.8 · s.11'],
+  ['Profil kodları', 'Kasa BF 8581 (74 × 85) · kanat BF 8582 (84 × 85) · takviye BF 409-15', 'ift belgesi'],
+  ['Çelik takviye', 'Galvaniz U 30 × 27 mm (ift belgesi), et 1,5 mm (s.9 çiziminden); boy: kasa A − 153, kanat A − 160 mm', 's.9 · s.10 · s.11'],
+  ['Takviye vidası', 'Kasa 3,9 × 19 YSB, uçtan 150 mm; kanat 3,9 × 19 YHB, iç köşeden 120 mm; sonra 300–400 mm arayla. s.32 tablosunda 3,9 × 22 / 3,9 × 25 geçer', 's.10 · s.11 · s.32'],
+  ['Drenaj yarığı', '32 × Ø4 mm; iç ve dış kanal 70 mm aralıklı; eğik yarık kasa 50°, kanat 60° (s.8 metninde 60° yazar, kasa çizimi 50° gösterir)', 's.8 · s.11'],
   ['Yarık adedi (kasa boyu C)', 'C < 500: 1 · 500–1000: 2 · 1000–2000: 3 · > 2000: 4', 's.8'],
   ['Köşe', 'Profiller 45° kesilir; kaynak plakası 240–280 °C, destek plakalarıyla', 's.6 · s.14'],
 ];
+
+// Resmi performans değerleri: yalnızca kullanıcının verdiği test belgesinden
+export const PERFORMANCE = {
+  uf: { value: '1,0', unit: 'W/(m²K)', label: 'Profil ısı geçirgenliği Uf', basis: 'EN 12412-2 · ift Rosenheim' },
+  rows: [
+    ['Isı geçirgenliği Uf', '1,0 W/(m²K), EN 12412-2:2003-07 (sıcak kutu ölçümü)', 'ift belgesi'],
+    ['Test numunesi', 'Kasa BF 8581 + kanat BF 8582, galvaniz takviye BF 409-15; cam yerine 44 mm dolgu paneli, kenar örtmesi 26 mm', 'ift belgesi'],
+    ['Görünür genişlik · derinlik', '124 mm · 85 mm', 'ift belgesi'],
+  ],
+  source: 'ift Rosenheim test belgesi 25-002770-PR01 (NW-K20-06-en-01), 28.11.2025. Sonuç yalnızca test edilen numuneye ilişkindir; bu numunede s.9 çizimindeki 32 mm üçlü cam gösterilir.',
+};
 
 export const ASSUMPTIONS = [
   'Numune kolları dış köşeden 300 mm (düz numunedeki gibi).',
@@ -265,4 +277,6 @@ export const ASSUMPTIONS = [
   'Takoz köprüsü 70 mm, konumu varsayım; rüzgarlık ölçüsü varsayım.',
   'Yarık konumları için iç köşe referansı dış görünüş çizgisi alınmıştır (kasa 74, kanat 102 mm).',
   'Kaynak dikişi ve renk seçenekleri görsel amaçlıdır.',
+  'Kasa takviyesi iki uçta eşit geri çekilmiştir (A − 153 → 76,5 mm); s.10 çiziminde uçtan 68 mm ölçüsü de vardır.',
+  'Vida baş ölçüleri standart değerlerdir (DIN 7504; kasa silindir, kanat havşa baş); döküman baş ölçüsü vermez.',
 ];

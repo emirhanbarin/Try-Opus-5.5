@@ -1,7 +1,8 @@
 <!doctype html>
-<html lang="tr">
+<html lang="tr" translate="no">
 <head>
 <meta charset="utf-8">
+<meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Supremo 85 · 3B Profil Görüntüleyici</title>
@@ -201,7 +202,10 @@
 // numune seçici: yumuşak geçiş; kiosk modunda (?kiosk=1) boşta kalınca köşe sayfasındaki tanıtıma döner
 (function () {
   var kiosk = /[?&]kiosk=1/.test(location.search), m = location.search.match(/[?&]idle=(\d+)/);
-  var q = kiosk ? '?kiosk=1' + (m ? '&idle=' + m[1] : '') : '';
+  // kiosk ayarları sayfalar arasında korunur
+  var keep = ['kiosk', 'idle', 'reload', 'fs', 'q', 'dpr', 'aa'], sp = new URLSearchParams(location.search), out = [];
+  keep.forEach(function (k) { if (kiosk && sp.has(k)) out.push(k + '=' + encodeURIComponent(sp.get(k))); });
+  var q = out.length ? '?' + out.join('&') : '';
   document.querySelectorAll('[data-page]').forEach(function (a) {
     a.addEventListener('click', function (e) {
       e.preventDefault();
@@ -213,7 +217,7 @@
   if (kiosk) {
     var idle = Math.max(15, m ? +m[1] : 90) * 1000, last = Date.now();
     ['pointerdown', 'pointermove', 'keydown', 'wheel'].forEach(function (ev) { window.addEventListener(ev, function () { last = Date.now(); }, { capture: true, passive: true }); });
-    setInterval(function () { if (Date.now() - last > idle) location.href = 'index.html' + q; }, 2000);
+    setInterval(function () { if (Date.now() - last > idle) location.href = 'index.html' + q + '&attract=1'; }, 2000);
   }
 })();
 </script>

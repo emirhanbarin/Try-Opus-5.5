@@ -43,7 +43,8 @@ def open_kiosk(url):
     """Edge / Chrome'u ayrı profille kiosk (tam ekran, adres çubuksuz) modunda açar; bulunamazsa False."""
     import subprocess, shutil, tempfile
     flags = ['--kiosk', url, '--no-first-run', '--no-default-browser-check', '--overscroll-history-navigation=0',
-             '--disable-pinch', '--user-data-dir=' + os.path.join(tempfile.gettempdir(), 'supremo85-kiosk')]
+             '--disable-pinch', '--disable-features=Translate', '--disable-translate', '--disable-session-crashed-bubble', '--noerrdialogs',
+             '--user-data-dir=' + os.path.join(tempfile.gettempdir(), 'supremo85-kiosk')]
     cands = []
     if sys.platform.startswith('win'):
         for env in ('PROGRAMFILES(X86)', 'PROGRAMFILES', 'LOCALAPPDATA'):

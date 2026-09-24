@@ -535,14 +535,14 @@
   "a": "kasa_profili",
   "b": "kasa_vidasi_alt",
   "tri_overlaps": 0,
-  "min_dist_mm": 0.0035,
+  "min_dist_mm": 0.0005,
   "inter_volume_mm3": null
  },
  {
   "a": "kasa_profili",
   "b": "kasa_vidasi_yan",
   "tri_overlaps": 0,
-  "min_dist_mm": 0.0035,
+  "min_dist_mm": 0.0005,
   "inter_volume_mm3": null
  },
  {

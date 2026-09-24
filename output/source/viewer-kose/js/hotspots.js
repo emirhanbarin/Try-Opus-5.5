@@ -9,7 +9,7 @@ export const HOTSPOTS = [
   { id: 'kapak', pos: [100, 30.2, -58.8], title: 'Rüzgarlık ve D-E yarığı', part: 'drenaj_kapagi', view: 'exterior',
     text: 'Dış yarık iç köşeden 10 mm sonra başlar, 32 × Ø4 mm (s.8). Alttan açık kapak suyu bırakır, rüzgârı keser.' },
   { id: 'celik', pos: [300, 10.9, 1.75], title: 'Galvaniz takviye', part: 'kasa_celik_takviye_alt', view: 'end',
-    text: '30 × 27 × 1,5 mm U profil. Kaynak bölgesine girmez: kasa takviyesi A − 153, kanat takviyesi A − 160 mm (s.10, s.11).' },
+    text: 'BF 409-15 galvaniz U, 30 × 27 mm (ift belgesi). Kaynak bölgesine girmez: kasa takviyesi A − 153, kanat takviyesi A − 160 mm (s.10, s.11).' },
   { id: 'conta', pos: [300, 56, -19.25], title: 'Üç conta hattı', part: 'orta_conta', view: 'end',
     text: 'Dış, orta ve iç conta kanadı kasaya üç hatta sızdırmaz kapatır; orta conta dış drenaj bölmesini iç bölmeden ayırır (s.9).' },
   { id: 'cam', pos: [300, 118, 2.75], title: 'Üçlü ısıcam', part: 'cam_2', view: 'end',
@@ -75,12 +75,18 @@ export class Hotspots {
     this.card.hidden = false;
     this.card.style.animation = 'none'; void this.card.offsetWidth; this.card.style.animation = '';
     app.select(null);                                   // bilgi kartı, parça panelinin yerini alır
-    if (h.clip) app.setClip(h.clip.axis, h.clip.pos);
+    const tour = app.modules.tour;
+    if (tour?.active && !tour.attract) tour.pause(true);  // ziyaretçi turunda işaret açılınca tur bekler
+    if (h.clip) { if (!app.state.clip.on) this.clipOwned = true; app.setClip(h.clip.axis, h.clip.pos); }
     if (h.view) app.setView(h.view);
     else if (h.part) app.focusPart(h.part);
     app.userActive();
   }
-  close() { this.card.hidden = true; }
+  close() {
+    this.card.hidden = true;
+    // işaretin açtığı kesit, kart kapanınca kapanır (kullanıcının kendi kesitine dokunulmaz)
+    if (this.clipOwned) { this.clipOwned = false; if (this.app.state.clip.on) { this.app.state.clip.on = false; this.app.updateClip(); } }
+  }
   update() {
     const app = this.app, cam = app.camera;
     const w = window.innerWidth, h = window.innerHeight;

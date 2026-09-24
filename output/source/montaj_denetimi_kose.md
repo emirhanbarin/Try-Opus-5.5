@@ -58,10 +58,10 @@ Kesit geometrisi PDF s.9 vektörlerinden çıkarılmıştır. Temas eden tüm pa
 | kasa_celik_takviye_alt | kasa_vidasi_alt | 0 | 0.0116 | None |
 | kasa_celik_takviye_yan | kasa_vidasi_yan | 0 | 0.0116 | None |
 | kasa_drenaj_kanallari | kasa_profili | 17 | 0.0 | None |
-| kasa_profili | kasa_vidasi_alt | 0 | 0.0035 | None |
-| kasa_profili | kasa_vidasi_yan | 0 | 0.0035 | None |
+| kasa_profili | kasa_vidasi_alt | 0 | 0.0005 | None |
+| kasa_profili | kasa_vidasi_yan | 0 | 0.0005 | None |
 
-Vidalar (3,9×19 YHB) yüzeye sıfır oturtulmuş; delikler vida zarfıyla açıldığından PVC ve çelikle kesişim yoktur (0,0035–0,0115 mm aralık).
+Kasa vidaları (3,9×19 YSB, s.10) silindir başla kasa alt yüzeyine oturur; kanat vidaları (3,9×19 YHB, s.11) yüzeyle sıfır havşalıdır. Delikler vida zarfıyla açıldığından PVC ve çelikle kesişim yoktur (0,0005–0,0116 mm aralık). Silindir baş ölçüsü (Ø7,5 × 2,8 mm) DIN 7504-N'den alınmıştır; döküman baş ölçüsü vermez.
 Rüzgarlık pimleri 4 mm yarıkta 0,15 mm boşlukla durur, tırnak yakası dış duvarın arkasına geçer.
 
 Gönye: iki kol her kesit noktasında gönye düzleminde (X = Y) aynı köşe noktasını paylaşır; boolean kullanılmaz, kaynaklı profiller tek parça kapalı katıdır. Köşedeki temas çiftleri düz numunedekilerle aynıdır; gönyeden kaynaklanan yeni çakışma yoktur.

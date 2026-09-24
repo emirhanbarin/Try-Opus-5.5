@@ -306,6 +306,7 @@ export function createGhostMaterial() {
       void main(){ float f = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 2.4);
         gl_FragColor = vec4(uColor * (0.55 + 0.6 * f), clamp(uOpacity + uEdge * f * 0.32, 0.0, 0.85)); }`,
     transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.NormalBlending, toneMapped: false,
+    forceSinglePass: true,                                // saydam + çift yüz: tek geçiş (aksi halde her parça iki kez çizilir)
   });
 }
 

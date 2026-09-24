@@ -8,7 +8,7 @@ const STEEL = ['kasa_celik_takviye_alt', 'kasa_celik_takviye_yan', 'kanat_celik_
 
 export const TOUR = [
   { id: 'genel', title: 'Supremo 85 · 45° kaynaklı köşe',
-    text: 'Kasa, kanat ve 32 mm üçlü ısıcamdan oluşan 85 mm derinliğinde uPVC pencere sisteminin gerçek ölçülü köşe numunesi. Kesitler teknik dökümanın 9. sayfasından birebir alınmıştır.',
+    text: 'Kasa, kanat ve 32 mm üçlü ısıcamdan oluşan 85 mm derinliğinde uPVC pencere sisteminin gerçek ölçülü köşe numunesi. Kesitler teknik dökümanın 9. sayfasından birebir alınmıştır. Profil ısı geçirgenliği Uf = 1,0 W/(m²K) (ift Rosenheim, EN 12412-2).',
     view: 'hero', turn: true, dur: 10000 },
   { id: 'kaynak', title: 'Kaynak yüzü',
     text: 'Profiller 45° kesilir (s.6) ve 240–280 °C ısıtıcı plakada eritilip bastırılarak kaynatılır; destek plakaları profili sabitler (s.14). Kesit düzlemi tam gönyeden geçiyor.',
@@ -17,7 +17,7 @@ export const TOUR = [
     text: 'Kasada 14, kanatta 11 kapalı kamara (s.9 çizimi). Kasa dış görünür yüksekliği 74 mm, kanat 84 mm; kasa ile kanat birlikte 104,5 mm derinlik.',
     view: 'dims', clip: { axis: 'x', pos: 296 }, dims: true, dur: 12000 },
   { id: 'celik', title: 'Galvaniz çelik takviye',
-    text: '30 × 27 × 1,5 mm U takviyeler kaynak bölgesine girmez: boyları kasada A − 153, kanatta A − 160 mm (s.10, s.11). 3,9 × 19 YHB vidalar uçtan 150 ve 120 mm içeride.',
+    text: 'BF 409-15 galvaniz U takviyeler (30 × 27 mm) kaynak bölgesine girmez: boyları kasada A − 153, kanatta A − 160 mm (s.10, s.11). Kasa vidaları 3,9 × 19 YSB uçtan 150 mm, kanat vidaları 3,9 × 19 YHB iç köşeden 120 mm içeride.',
     view: { dir: [0.72, 0.5, 0.95], r: 0.2, target: [0.0, 0.1, 0.0] }, ghost: [...PROFILES, ...GASKETS, ...GLASS, 'drenaj_kapagi'], dur: 13000 },
   { id: 'conta', title: 'Üç conta hattı',
     text: 'Kasa dış contası, orta conta ve kanat iç contası kanadı kasaya üç hatta sızdırmaz kapatır. Orta conta dış drenaj bölmesini iç bölmeden ayırır (s.9).',

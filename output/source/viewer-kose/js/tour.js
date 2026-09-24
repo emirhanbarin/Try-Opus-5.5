@@ -30,8 +30,10 @@ export class Tour {
   start({ loop = false, attract = false } = {}) {
     const app = this.app, s = app.state;
     if (!this.active) {
-      this.saved = { explode: s.explodeTarget, finish: s.finish, turn: app.turn.on,
-        pos: app.camera.position.clone(), target: app.controls.target.clone(), fov: app.camera.fov };
+      // patlatma animasyonu sürüyorsa ara değer değil hedef kaydedilir; gizle/izole durumu da korunur
+      this.saved = { explode: s.explodeAnim ? s.explodeAnim.to : s.explodeTarget, finish: s.finish, turn: app.turn.on,
+        pos: app.camera.position.clone(), target: app.controls.target.clone(), fov: app.camera.fov,
+        hidden: [...app.parts.values()].filter((p) => !p.visible).map((p) => p.def.id), solo: s.soloSet ? [...s.soloSet] : null };
     }
     this.active = true; this.loop = loop; this.attract = attract; this.paused = false;
     document.body.classList.add('touring'); document.body.classList.toggle('attract', attract);
@@ -95,7 +97,10 @@ export class Tour {
     app.$('btnTour').classList.remove('active'); app.$('btnTour').querySelector('span').textContent = 'Keşif turu';
     this.cleanup();
     if (restore && this.saved) {
-      app.setExplodeTarget(0, true);
+      app.setExplodeTarget(this.saved.explode || 0, true);
+      for (const id of this.saved.hidden) { const p = app.parts.get(id); if (p) p.visible = false; }
+      app.state.soloSet = this.saved.solo ? new Set(this.saved.solo) : null;
+      app.refreshVisibility();
       app.setFinish(this.saved.finish);
       app.animateCamera(this.saved.pos, this.saved.target, 1100, this.saved.fov);
       app.setTurntable(this.saved.turn);

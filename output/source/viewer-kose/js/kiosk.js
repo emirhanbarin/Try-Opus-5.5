@@ -14,7 +14,7 @@ export class Kiosk {
     // tam ekran: tarayıcı zaten kiosk/tam ekran modundaysa ya da &fs=0 verildiyse istenmez
     this.wantFs = p.get('fs') !== '0';
     this.last = performance.now();
-    this.attract = false; this.swallow = false;
+    this.attract = false; this.swallow = false; this.swallowAt = 0;
     this.overlay = app.$('attract');
     if (!enabled) return;
     document.body.classList.add('kiosk');
@@ -46,14 +46,16 @@ export class Kiosk {
     this.last = performance.now();
     const alreadyFull = document.fullscreenElement || (window.innerHeight >= screen.height - 2 && window.innerWidth >= screen.width - 2);
     if (this.wantFs && !alreadyFull && e.type === 'pointerdown') document.documentElement.requestFullscreen?.().catch(() => {});
-    if (this.attract) { this.exitAttract(); if (e.type === 'pointerdown') this.swallow = true; }
+    if (this.attract) { this.exitAttract(); if (e.type === 'pointerdown') { this.swallow = true; this.swallowAt = performance.now(); } }
   }
   poke() { this.last = performance.now(); }
-  swallowTap() { const s = this.swallow; this.swallow = false; return s; }
+  // uyandıran dokunuşun bırakılışı seçim sayılmaz; bayrak en fazla 1,5 sn yaşar (kaydırma ya da karta dokunuşta takılı kalmasın)
+  swallowTap() { const s = this.swallow && performance.now() - this.swallowAt < 1500; this.swallow = false; return s; }
   enterAttract() {
     const app = this.app;
     this.attract = true;
     app.resetAll();
+    app.restoreQuality();
     app.setFinish('beyaz');
     this.overlay.hidden = false;
     document.body.classList.add('attract-on');
@@ -73,7 +75,9 @@ export class Kiosk {
   step(now) {
     if (!this.enabled) return false;
     if (!this.attract && now - this.last > this.idleMs && !this.app.state.intro) this.enterAttract();
-    if (this.attract && this.reloadMs && now - this.bootAt > this.reloadMs) location.reload();
+    if (this.attract && this.reloadMs && now - this.bootAt > this.reloadMs) {
+      const u = new URL(location.href); u.searchParams.set('attract', '1'); location.replace(u.toString());
+    }
     return false;
   }
 }

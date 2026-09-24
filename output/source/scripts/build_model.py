@@ -155,6 +155,8 @@ def stadium_prism(name, center_sxsy, axis2d, width_dir2d, u_c, length, width, d0
 
 # ---------------------------------------------------------------- screw
 SCREW = dict(d_head=7.0, rim=0.25, d_major=3.9, d_minor=2.9, pitch=1.3, length=19.0, point=3.4)
+# silindir (pan) baş, YSB: DIN 7504-N ST3,9 üst sınır ölçüleri (döküman baş ölçüsü vermez; varsayım)
+SCREW_PAN = dict(d_head=7.5, k=2.8)
 
 def lathe(bm, prof, seg=24, axis_origin=Vector((0, 0, 0))):
     """prof: list of (r, z) from top to bottom; r=0 end points collapse. Closed solid, outward normals."""
@@ -178,16 +180,24 @@ def lathe(bm, prof, seg=24, axis_origin=Vector((0, 0, 0))):
     bmesh.ops.recalc_face_normals(bm, faces=new_faces)
     return rings
 
-def screw_mesh(name, seg=24):
-    """Countersunk self-drilling screw 3.9x19 (PH2), head top at z=0, tip at z=-19 (local, mm -> m)."""
+def screw_mesh(name, seg=24, head='csk'):
+    """Self-drilling screw 3.9x19 (PH2), tip at z=-19 (local, mm -> m).
+    head='csk': countersunk (YHB), head top flush at z=0. head='pan': pan head (YSB), bearing face at z=0, head above."""
     s = SCREW
     rH, rM, rm, p = s['d_head'] / 2, s['d_major'] / 2, s['d_minor'] / 2, s['pitch']
-    z_cone = -(s['rim'] + (rH - rM))          # end of countersink cone (r = rM)
+    z_top = 0.0
+    if head == 'pan':
+        rH, z_top = SCREW_PAN['d_head'] / 2, SCREW_PAN['k']
+        z_cone = 0.0                               # thread core starts under the bearing face
+        top = [(0.0, z_top), (rH * 0.72, z_top), (rH * 0.9, z_top - 0.3), (rH, z_top - 0.95), (rH, 0.12), (rH - 0.12, 0.0)]
+    else:
+        z_cone = -(s['rim'] + (rH - rM))          # end of countersink cone (r = rM)
+        top = [(0.0, 0.0), (rH - 0.12, 0.0), (rH, -0.12), (rH, -s['rim']), (rM, z_cone)]
     z_thr0, z_thr1 = z_cone - 0.25, -(s['length'] - s['point'])
     # --- head + core + drill point (closed lathe solid)
     bm = bmesh.new()
-    prof = [(0.0, 0.0), (rH - 0.12, 0.0), (rH, -0.12), (rH, -s['rim']), (rM, z_cone),
-            (rm - 0.03, z_cone - 0.12), (rm - 0.03, z_thr1), (rm * 0.88, z_thr1 - 0.7), (0.2, -s['length'] + 0.1), (0.0, -s['length'])]
+    prof = top + [(rm - 0.03, z_cone - (0.0 if head == 'pan' else 0.12)), (rm - 0.03, z_thr1), (rm * 0.88, z_thr1 - 0.7),
+                  (0.2, -s['length'] + 0.1), (0.0, -s['length'])]
     lathe(bm, prof, seg)
     bmesh.ops.scale(bm, vec=(MM, MM, MM), verts=bm.verts[:])
     ob = new_object(name, bm)
@@ -195,14 +205,14 @@ def screw_mesh(name, seg=24):
     for ang in (0, 90):   # two separate cutters (crossing boxes in one cutter break the exact solver)
         rec = bmesh.new()
         bmesh.ops.create_cube(rec, size=1.0, matrix=Matrix.Rotation(math.radians(ang), 4, 'Z') @ Matrix.Diagonal((3.6 * MM, 0.9 * MM, 3.0 * MM, 1)))
-        bmesh.ops.translate(rec, vec=(0, 0, 0.1 * MM), verts=rec.verts[:])
+        bmesh.ops.translate(rec, vec=(0, 0, (z_top + 0.1) * MM), verts=rec.verts[:])
         rec_ob = new_object(name + '_rec1', rec)
         boolean(ob, rec_ob); delete(rec_ob)
         assert len(ob.data.vertices) > 0, 'recess boolean failed'
     
     rec = bmesh.new()
     cone = bmesh.ops.create_cone(rec, cap_ends=True, segments=16, radius1=0.0, radius2=1.6 * MM, depth=1.8 * MM)
-    bmesh.ops.translate(rec, vec=(0, 0, -0.35 * MM), verts=rec.verts[:])
+    bmesh.ops.translate(rec, vec=(0, 0, (z_top - 0.35) * MM), verts=rec.verts[:])
     rec_ob = new_object(name + '_rec2', rec)
     boolean(ob, rec_ob); delete(rec_ob)
     # --- helical thread surface (rows follow the helix, outward normals)
@@ -238,13 +248,16 @@ def screw_mesh(name, seg=24):
     bm.to_mesh(ob.data); bm.free()
     return ob
 
-def screw_envelope(name):
-    """Hole volume for a seated screw (countersink + major diameter), local mm like screw."""
+def screw_envelope(name, head='csk'):
+    """Hole volume for a seated screw (countersink + major diameter; pan head: shank hole only), local mm like screw."""
     s = SCREW
     rH, rM = s['d_head'] / 2 + 0.02, s['d_major'] / 2 + 0.02
     z_cone = -(s['rim'] + (rH - rM))
     bm = bmesh.new()
-    prof = [(0.0, 3.0), (rH, 3.0), (rH, -s['rim']), (rM, z_cone), (rM, -s['length'] - 0.3), (0.0, -s['length'] - 0.3)]
+    if head == 'pan':
+        prof = [(0.0, 3.0), (rM, 3.0), (rM, -s['length'] - 0.3), (0.0, -s['length'] - 0.3)]
+    else:
+        prof = [(0.0, 3.0), (rH, 3.0), (rH, -s['rim']), (rM, z_cone), (rM, -s['length'] - 0.3), (0.0, -s['length'] - 0.3)]
     lathe(bm, prof, 32)
     bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-6)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])

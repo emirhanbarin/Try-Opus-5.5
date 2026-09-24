@@ -24,7 +24,7 @@ $opened = $false
 if ($Kiosk) {
   Write-Host 'Kiosk modu: çıkmak için Alt+F4.'
   $prof = Join-Path ([System.IO.Path]::GetTempPath()) 'supremo85-kiosk'
-  $flags = @('--kiosk', $url, '--no-first-run', '--no-default-browser-check', '--overscroll-history-navigation=0', '--disable-pinch', "--user-data-dir=$prof")
+  $flags = @('--kiosk', $url, '--no-first-run', '--no-default-browser-check', '--overscroll-history-navigation=0', '--disable-pinch', '--disable-features=Translate', '--disable-translate', '--disable-session-crashed-bubble', '--noerrdialogs', "--user-data-dir=$prof")
   foreach ($base in @(${env:ProgramFiles(x86)}, $env:ProgramFiles, $env:LOCALAPPDATA)) {
     if (-not $base) { continue }
     $edge = Join-Path $base 'Microsoft\Edge\Application\msedge.exe'

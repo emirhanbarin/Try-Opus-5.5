@@ -249,21 +249,22 @@ def build():
             boolean(ob, c)
             delete(c)
 
-    # --- vidalar (3,9 × 19 YHB). Kasa: dış uçtan 150 mm (s.10); kanat: iç köşeden 120 mm (s.11)
+    # --- vidalar: kasa 3,9 × 19 YSB silindir baş, dış uçtan 150 mm (s.10); kanat 3,9 × 19 YHB havşa baş, iç köşeden 120 mm (s.11)
     hole_mat = bpy.data.materials.get('HOLE') or bpy.data.materials.new('HOLE')
-    proto = screw_mesh('vida_proto')
+    protos = {'pan': screw_mesh('vida_proto_ysb', head='pan'), 'csk': screw_mesh('vida_proto_yhb')}
     X_SF, X_SS = 150.0, REF_SASH + 120.0
     placements = [
-        ('kasa_vidasi_alt', X_SF, 53.0, 7.015, 'up', False, ['kasa_profili', 'kasa_celik_takviye_alt']),
-        ('kasa_vidasi_yan', X_SF, 53.0, 7.015, 'up', True, ['kasa_profili', 'kasa_celik_takviye_yan']),
-        ('kanat_vidasi_alt', X_SS, 72.39, 94.007, 'down', False, ['kanat_profili', 'kanat_celik_takviye_alt']),
-        ('kanat_vidasi_yan', X_SS, 72.39, 94.007, 'down', True, ['kanat_profili', 'kanat_celik_takviye_yan']),
+        ('kasa_vidasi_alt', X_SF, 53.0, 7.015, 'up', False, 'pan', ['kasa_profili', 'kasa_celik_takviye_alt']),
+        ('kasa_vidasi_yan', X_SF, 53.0, 7.015, 'up', True, 'pan', ['kasa_profili', 'kasa_celik_takviye_yan']),
+        ('kanat_vidasi_alt', X_SS, 72.39, 94.007, 'down', False, 'csk', ['kanat_profili', 'kanat_celik_takviye_alt']),
+        ('kanat_vidasi_yan', X_SS, 72.39, 94.007, 'down', True, 'csk', ['kanat_profili', 'kanat_celik_takviye_yan']),
     ]
-    for name, pos, sx, sy, d, jamb, targets in placements:
+    for name, pos, sx, sy, d, jamb, head, targets in placements:
         u = (-pos if jamb else pos) + UOFF
+        proto = protos[head]
         s = proto.copy(); s.data = proto.data.copy(); bpy.context.scene.collection.objects.link(s)
         place_local(s, u, sx, sy, d)
-        env = screw_envelope('env'); place_local(env, u, sx, sy, d)
+        env = screw_envelope('env', head=head); place_local(env, u, sx, sy, d)
         if jamb:
             to_jamb(s); to_jamb(env)
         env.data.materials.append(hole_mat)
@@ -275,7 +276,7 @@ def build():
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
         s.name = name; s.data.name = name
         parts[name] = s
-    delete(proto)
+    for proto in protos.values(): delete(proto)
 
     # --- rüzgarlık (dış yarık D-E üzerinde)
     parts['drenaj_kapagi'] = drain_cover('drenaj_kapagi', X_DE + UOFF, 30.22)

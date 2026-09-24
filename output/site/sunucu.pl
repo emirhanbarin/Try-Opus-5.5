@@ -17,7 +17,7 @@ for my $p ($start .. $start + 40) {
 die "Boş port bulunamadı\n" unless $srv;
 my $url = "http://localhost:$port/" . ($kiosk ? '?kiosk=1' : '');
 print "Supremo 85 3B görüntüleyici çalışıyor: $url\nKapatmak için bu pencereyi kapatın (veya Ctrl+C).\n";
-my @kflags = ('--kiosk', $url, '--no-first-run', '--no-default-browser-check', '--overscroll-history-navigation=0', '--disable-pinch', '--user-data-dir=/tmp/supremo85-kiosk');
+my @kflags = ('--kiosk', $url, '--no-first-run', '--no-default-browser-check', '--overscroll-history-navigation=0', '--disable-pinch', '--disable-features=Translate', '--disable-translate', '--disable-session-crashed-bubble', '--noerrdialogs', '--user-data-dir=/tmp/supremo85-kiosk');
 if ($kiosk && $^O eq 'darwin' && -d '/Applications/Google Chrome.app') { print "Kiosk modu: çıkmak için Cmd+Q.\n"; system('open', '-na', 'Google Chrome', '--args', @kflags); }
 elsif ($kiosk && $^O eq 'darwin' && -d '/Applications/Microsoft Edge.app') { print "Kiosk modu: çıkmak için Cmd+Q.\n"; system('open', '-na', 'Microsoft Edge', '--args', @kflags, '--edge-kiosk-type=fullscreen'); }
 elsif ($^O eq 'darwin') { system('open', $url); } else { system("xdg-open '$url' >/dev/null 2>&1 &"); }

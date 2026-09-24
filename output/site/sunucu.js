@@ -11,7 +11,8 @@ const START = Number(process.argv.slice(2).find((a) => /^\d+$/.test(a))) || 8080
 
 function openKiosk(url) {
   const flags = ['--kiosk', url, '--no-first-run', '--no-default-browser-check', '--overscroll-history-navigation=0',
-    '--disable-pinch', '--user-data-dir=' + path.join(os.tmpdir(), 'supremo85-kiosk')];
+    '--disable-pinch', '--disable-features=Translate', '--disable-translate', '--disable-session-crashed-bubble', '--noerrdialogs',
+    '--user-data-dir=' + path.join(os.tmpdir(), 'supremo85-kiosk')];
   const c = [];
   if (process.platform === 'win32') {
     for (const env of ['PROGRAMFILES(X86)', 'PROGRAMFILES', 'LOCALAPPDATA']) {

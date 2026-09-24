@@ -1,7 +1,8 @@
 <!doctype html>
-<html lang="tr">
+<html lang="tr" translate="no">
 <head>
 <meta charset="utf-8">
+<meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Supremo 85 · 45° Kaynaklı Köşe · 3B Görüntüleyici</title>
@@ -32,7 +33,7 @@
   <div class="brand">
     <div class="brand-overline">SUPREMO 85 · 8500 SERİSİ</div>
     <div class="brand-title">45° Kaynaklı Köşe Numunesi</div>
-    <div class="brand-sub">Kasa + kanat + üçlü cam · 300 × 300 mm</div>
+    <div class="brand-sub"><span class="bs-text">Kasa + kanat + üçlü cam · 300 × 300 mm</span><button class="cert-badge" id="certBadge" hidden title="Resmi test sonucu (ift Rosenheim) · ayrıntılar"><b>Uf</b><span id="certBadgeVal">—</span></button></div>
   </div>
   <nav class="page-switch" aria-label="Numune seçimi">
     <a class="active" data-page href="index.html" aria-current="page">Köşe kesiti</a>
@@ -262,9 +263,18 @@
   <div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="specsTitle">
     <div class="panel-head"><div><div class="info-group">Supremo 85 · 8500 serisi</div><div class="panel-title spec-title" id="specsTitle">Teknik özellikler</div></div>
       <button class="icon-btn small" data-close title="Kapat" aria-label="Kapat"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <section class="cert-block" id="certBlock" hidden>
+      <div class="cert-hero">
+        <div class="cert-num"><span id="certValue">—</span><small id="certUnit"></small></div>
+        <div class="cert-meta"><div class="cert-label" id="certLabel">—</div><div class="cert-basis" id="certBasis">—</div></div>
+      </div>
+      <dl class="info-dims spec-list" id="certList"></dl>
+      <p class="help-note" id="certSource"></p>
+      <div class="info-label spec-sep">Teknik dökümandan</div>
+    </section>
     <dl class="info-dims spec-list" id="specsList"></dl>
     <div class="info-block"><div class="info-label">Numune için varsayımlar</div><ul class="assumptions" id="assumptionsList"></ul></div>
-    <p class="help-note">Değerler teknik üretim dökümanından alınmıştır; sağdaki kısaltmalar sayfa numarasıdır.</p>
+    <p class="help-note">Değerler teknik üretim dökümanından (s. = sayfa) ve ift Rosenheim test belgesinden alınmıştır.</p>
   </div>
 </div>
 

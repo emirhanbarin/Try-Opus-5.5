@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 node_modules/
 output/source/env/*.npy
+output/source/bake/*.exr

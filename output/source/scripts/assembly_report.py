@@ -3,7 +3,8 @@
 2D: tüm parça çiftleri için kesişim alanı ve en büyük gömülme derinliği (içine sığan en büyük daire çapı).
 3D: assembly_check.json (check_assembly.py) sonuçlarını özetler.
 Çıktı: ../montaj_denetimi.md
-Env: CHECK (varsayılan assembly_check.json), OUT (varsayılan montaj_denetimi.md), TITLE (başlık eki)"""
+Env: CHECK (varsayılan assembly_check.json), OUT (varsayılan montaj_denetimi.md), TITLE (başlık eki),
+NOTE (son not), SCREWS (vida paragrafı; varsayılan düz numune metni)"""
 import json, itertools, os
 import numpy as np
 import shapely
@@ -49,7 +50,7 @@ out += ['', f'**En büyük gömülme derinliği: {mx:.3f} mm** — kanat iç con
 for r in chk:
     if any(k in (r['a'] + r['b']) for k in ('vida', 'kapag', 'kanallari')):
         out.append(f"| {r['a']} | {r['b']} | {r['tri_overlaps']} | {r['min_dist_mm']} | {r['inter_volume_mm3']} |")
-out += ['', 'Vidalar (3,9×19 YHB) yüzeye sıfır oturtulmuş; delikler vida zarfıyla açıldığından PVC ve çelikle kesişim yoktur (0,0035–0,0115 mm aralık).',
+out += ['', os.environ.get('SCREWS', 'Vidalar (3,9×19 YHB) yüzeye sıfır oturtulmuş; delikler vida zarfıyla açıldığından PVC ve çelikle kesişim yoktur (0,0035–0,0115 mm aralık).'),
         'Rüzgarlık pimleri 4 mm yarıkta 0,15 mm boşlukla durur, tırnak yakası dış duvarın arkasına geçer.']
 if os.environ.get('NOTE'):
     out += ['', os.environ['NOTE']]

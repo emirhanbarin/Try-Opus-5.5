@@ -33,10 +33,10 @@ Yeniden üretim (Python 3.11 + `pip install bpy pymupdf shapely scipy pillow`, K
 1. `scripts/build_corner.py` → `supremo85_kose.blend` ve `kose_info.json`.
    - Gönye boolean kullanılmadan kurulur: her kesit noktası için kol `u = sy`'den başlar (gönye düzlemi X = Y).
    - Yarık düzeni s.8 ve s.11'den: iç köşeden 10 mm, sonra 32 mm yarık, 70 mm ara, 32 mm yarık. Eğik yarık açısı kasada 50°, kanatta 60° (düşey referansa göre).
-   - Takviye boyu s.10 ve s.11'den: kasa A − 153, kanat A − 160 mm. Vida konumu kasada uçtan 150 mm (s.10), kanatta iç köşeden 120 mm (s.11).
+   - Takviye boyu s.10 ve s.11'den: kasa A − 153, kanat A − 160 mm. Vidalar: kasada 3,9 × 19 YSB silindir baş, uçtan 150 mm (s.10); kanatta 3,9 × 19 YHB havşa baş, iç köşeden 120 mm (s.11). `build_model.screw_mesh(head='pan')` silindir başı üretir (DIN 7504-N ölçüleri; varsayılan havşa baş değişmez).
 2. Montaj denetimi:
    - `BLEND=supremo85_kose.blend OUT=assembly_check_kose.json python3 scripts/check_assembly.py`
-   - `CHECK=assembly_check_kose.json OUT=montaj_denetimi_kose.md python3 scripts/assembly_report.py`
+   - `CHECK=assembly_check_kose.json OUT=montaj_denetimi_kose.md python3 scripts/assembly_report.py` (`TITLE`, `NOTE` ve `SCREWS` ile başlık, not ve vida paragrafı verilir)
 3. AO: `CORNER=1 BLEND=supremo85_kose.blend PREFIX=kose_ GLB_OUT=supremo85_kose_raw.glb python3 scripts/bake_ao.py`.
    - Gönye düzleminde UV dikişi açılır; her kol kendi ekseninde ×0,25 sıkıştırılır.
    - Folyo maskesi ikinci UV'ye (`FOIL`) yazılır: dış kontur yan yüzleri folyo, uç kesit ve kamara duvarları beyaz çekirdek.
@@ -61,4 +61,4 @@ Yeniden üretim (Python 3.11 + `pip install bpy pymupdf shapely scipy pillow`, K
   - `scripts/kiosk_soak.mjs <url> 30 1920x1080`: kiosk dayanıklılığı.
   - `scripts/bench.mjs`: performans.
 
-Not: Teknik dökümanın kopyası (`reference/Supremo85_teknik_dokuman.pdf`) yalnızca yerelde tutulur, depoya eklenmez.
+Not: Teknik dökümanın (`reference/Supremo85_teknik_dokuman.pdf`) ve ift Rosenheim Uf test belgesinin (`reference/Supremo8500_ift_Uf_sertifika.pdf`) kopyaları yalnızca yerelde tutulur, depoya eklenmez. Görüntüleyicideki performans değerleri (`viewer-kose/js/parts-data.js` → `PERFORMANCE`) yalnızca bu belgeden alınır.

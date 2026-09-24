@@ -1,7 +1,7 @@
 // Supremo 85 — 45° kaynaklı köşe numunesi: premium 3B görüntüleyici (fuar sürümü)
 // three.js r186 (yerel paket), meshopt geometri, KTX2 dokular, önceden pişirilmiş AO, stüdyo HDRI v2
 import * as THREE from '../vendor/three-bundle.min.js';
-import { PARTS, GROUPS, MATERIALS, SECTION_PRESETS, FINISHES, SPECS, ASSUMPTIONS } from './parts-data.js';
+import { PARTS, GROUPS, MATERIALS, SECTION_PRESETS, FINISHES, SPECS, ASSUMPTIONS, PERFORMANCE } from './parts-data.js';
 import { createMaterial, createGhostMaterial, shared, applyFinish } from './materials.js';
 import { ContactShadow } from './contact-shadow.js';
 import { Tour } from './tour.js';
@@ -79,7 +79,7 @@ controls.minDistance = 0.08;
 controls.maxDistance = 4;
 controls.screenSpacePanning = true;
 controls.addEventListener('change', () => { state.needsRender = Math.max(state.needsRender, 1); });
-controls.addEventListener('start', () => { state.camAnim = null; exFrame.active = false; userActive(); });
+controls.addEventListener('start', () => { state.camAnim = null; exFrame.active = false; if (state.intro) endIntro(); userActive(); });
 
 const model = new THREE.Group();
 model.position.copy(MODEL_OFFSET);
@@ -99,7 +99,7 @@ function progress(key, loaded, total) {
   $('progressBar').style.width = pct + '%';
   $('loaderPct').textContent = pct + '%';
 }
-const EXPECTED = { model: 678256, ao: 865704, env: 523995, spangle: 195010, wood: 150000, basis: 584862 };
+const EXPECTED = { model: 682916, ao: 860590, env: 523995, spangle: 195010, wood: 180748, basis: 584862 };
 for (const k in EXPECTED) progress(k, 0, EXPECTED[k]);
 
 function fatal(msg) {
@@ -207,7 +207,9 @@ async function boot() {
   $('loader').classList.add('done');
   document.body.classList.add('ready');
   modules.kiosk.poke();
-  if (params.get('intro') === '0') { state.intro = false; setView('hero', true); startTurntableAfterIntro(); }
+  perf.adaptFrom = performance.now() + 10000;       // açılıştaki derleme/yükleme takılmaları kaliteyi düşürmesin
+  if (KIOSK && params.get('attract') === '1') { state.intro = false; setView('hero', true); modules.kiosk.enterAttract(); }
+  else if (params.get('intro') === '0') { state.intro = false; setView('hero', true); startTurntableAfterIntro(); }
   else introAnimation();
 }
 const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
@@ -435,7 +437,8 @@ canvas.addEventListener('pointermove', (e) => {
 canvas.addEventListener('pointerleave', () => setHover(null));
 canvas.addEventListener('pointerdown', (e) => { pointer.down = { x: e.clientX, y: e.clientY }; pointer.moved = false; closePopovers(); userActive(); });
 canvas.addEventListener('pointerup', (e) => {
-  if (pointer.down && !pointer.moved && e.button === 0 && !(modules.kiosk && modules.kiosk.swallowTap())) {
+  const swallowed = !!modules.kiosk?.swallowTap();   // tanıtımı bitiren dokunuş seçim sayılmaz
+  if (pointer.down && !pointer.moved && e.button === 0 && !swallowed) {
     const id = pick(e.clientX, e.clientY);
     select(id);
   }
@@ -494,6 +497,7 @@ function setClip(axis, pos, on = true) {
 function updateClip() {
   const c = state.clip;
   attachClipping(c.on);
+  $('btnSection').setAttribute('aria-pressed', String(c.on));
   if (!c.on) {
     clipPlane.set(new THREE.Vector3(1, 0, 0), 1e6);
     shared.uClipOn.value = 0;
@@ -511,7 +515,7 @@ function updateClip() {
   if (!planeHelper) {
     const g = new THREE.PlaneGeometry(1, 1);
     planeHelper = new THREE.Group();
-    const fill = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0x5cc8ff, transparent: true, opacity: 0.07, side: THREE.DoubleSide, depthWrite: false, toneMapped: false }));
+    const fill = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0x5cc8ff, transparent: true, opacity: 0.07, side: THREE.DoubleSide, depthWrite: false, toneMapped: false, forceSinglePass: true }));
     const edge = new THREE.LineSegments(new THREE.EdgesGeometry(g), new THREE.LineBasicMaterial({ color: 0x5cc8ff, transparent: true, opacity: 0.8, toneMapped: false }));
     planeHelper.add(fill, edge); planeHelper.renderOrder = 5;
     scene.add(planeHelper);
@@ -597,7 +601,27 @@ const VIEWS = {
   bottom:   { dir: [0.4, -0.75, 0.55], r: 0.2, target: [0, 0.07, 0] },
   weld:     { dir: [-0.62, 0.55, 0.62], r: 0.095, target: [-0.088, 0.066, 0.0] },
 };
+// serbest alan önbelleği: paneller değişince (gözlemciler) ya da en geç 250 ms'de bir yeniden ölçülür;
+// her karede düzen okuması yapılmaz
+let faCache = null, faT = 0, layoutDirty = true;
+function markLayout() { layoutDirty = true; }
+function watchLayout() {
+  const mo = new MutationObserver(markLayout);
+  const ro = new ResizeObserver(markLayout);
+  for (const id of ['partsPanel', 'infoPanel', 'hotCard', 'sectionPop', 'tourCard', 'dock']) {
+    const el = $(id); if (!el) continue;
+    mo.observe(el, { attributes: true, attributeFilter: ['hidden', 'class'] });
+    ro.observe(el);
+  }
+  const top = document.querySelector('.topbar'); if (top) ro.observe(top);
+}
 function freeArea() {
+  const now = performance.now();
+  if (faCache && !layoutDirty && now - faT < 250) return faCache;
+  faCache = measureFreeArea(); faT = now; layoutDirty = false;
+  return faCache;
+}
+function measureFreeArea() {
   const W = window.innerWidth, H = window.innerHeight;
   const narrow = W < 820;
   const rectW = (id) => { const el = $(id); if (!el || el.hidden || el.classList.contains('collapsed')) return 0; const r = el.getBoundingClientRect(); return r.width > 0 ? r.right + 16 : 0; };
@@ -636,6 +660,7 @@ function stepViewOffset(dt) {
 }
 const BASE_FOV = 30;
 function viewPose(name, explodeFor = state.explode) {
+  markLayout();                                       // kamera çerçevesi güncel panel yerleşimine göre hesaplanır
   const v = typeof name === 'string' ? VIEWS[name] : name;
   const fov = v.fov || BASE_FOV;
   const target = new THREE.Vector3(...v.target);
@@ -671,6 +696,7 @@ function stepCamera(now) {
   return true;
 }
 function focusPart(id) {
+  markLayout();
   const p = parts.get(id);
   const box = new THREE.Box3().setFromObject(p.mesh);
   const sphere = box.getBoundingSphere(new THREE.Sphere());
@@ -680,8 +706,15 @@ function focusPart(id) {
 }
 
 // ------------------------------------------------------------------ açılış sinematiği + 360° döner tabla
+const introState = { t0: 0, anim: null };
+function endIntro() {
+  if (!state.intro) return;
+  state.intro = false; introState.anim = null;
+  if (!state.explodeAnim && state.explode > 0.001) setExplodeTarget(0, true, 1200);
+  startTurntableAfterIntro();
+}
 function introAnimation() {
-  state.intro = true;
+  state.intro = true; introState.t0 = performance.now(); introState.anim = null;
   const hero = viewPose('hero', 0);
   const start = hero.pos.clone().sub(hero.target).applyAxisAngle(Y_AXIS, -1.15);
   start.y += 0.08; start.multiplyScalar(1.45).add(hero.target);
@@ -689,9 +722,10 @@ function introAnimation() {
   state.explode = state.explodeTarget = 0.9; applyExplode();
   $('explode').value = 900; setRangeFill($('explode'));
   setTimeout(() => {
+    if (!state.intro) return;                          // ziyaretçi bu arada etkileşti
     setExplodeTarget(0, true, 2600);
     animateCamera(hero.pos, hero.target, 3200);
-    state.camAnim.done = () => { state.intro = false; startTurntableAfterIntro(); };
+    introState.anim = state.camAnim; state.camAnim.done = endIntro;
   }, 350);
 }
 const TURN_SPEEDS = [0.45, 0.9, 1.8];    // OrbitControls: 2,0 = 30 sn/tur; 0,9 ≈ 67 sn/tur
@@ -864,18 +898,39 @@ function buildUI() {
   }
   const al = $('assumptionsList');
   for (const a of ASSUMPTIONS) { const li = document.createElement('li'); li.textContent = a; al.append(li); }
+  // resmi test (ift belgesi): yalnızca belge verildiyse gösterilir
+  if (PERFORMANCE) {
+    const P = PERFORMANCE;
+    $('certValue').textContent = P.uf.value; $('certUnit').textContent = P.uf.unit;
+    $('certLabel').textContent = P.uf.label; $('certBasis').textContent = P.uf.basis;
+    const cl = $('certList');
+    for (const [k, v, src] of P.rows) {
+      const dt = document.createElement('dt'); dt.textContent = k;
+      const dd = document.createElement('dd'); dd.textContent = v;
+      const sp = document.createElement('span'); sp.className = 'src'; sp.textContent = src; dd.append(sp);
+      cl.append(dt, dd);
+    }
+    $('certSource').textContent = P.source;
+    $('certBlock').hidden = false;
+    $('certBadgeVal').textContent = `${P.uf.value} ${P.uf.unit}`;
+    $('certBadge').hidden = false;
+    $('certBadge').onclick = () => ($('specsModal').hidden = false);
+  }
 
   // sayfa geçişi (düz kesit)
   document.querySelectorAll('[data-page]').forEach((a) => a.addEventListener('click', (e) => {
     const href = a.getAttribute('href');
     if (!href || a.classList.contains('active')) { e.preventDefault(); return; }
     e.preventDefault();
-    const url = href + (KIOSK ? (href.includes('?') ? '&' : '?') + 'kiosk=1' : '');
+    const u = new URL(href, location.href);
+    if (KIOSK) for (const k of ['kiosk', 'idle', 'reload', 'fs', 'q', 'dpr', 'aa']) if (params.has(k)) u.searchParams.set(k, params.get(k));
+    const url = u.toString();
     document.body.classList.add('leaving');
     setTimeout(() => { location.href = url; }, 260);
   }));
 
   window.addEventListener('keydown', onKey);
+  watchLayout();
   updateClip();
   setRangeFill(ex);
   setFinish('beyaz');
@@ -904,9 +959,12 @@ function closePopovers() {
   $('btnViews').setAttribute('aria-pressed', 'false');
   $('btnFinish').setAttribute('aria-pressed', 'false');
 }
+function closeModals() { for (const id of ['helpModal', 'specsModal', 'perfModal']) $(id).hidden = true; }
+const anyModalOpen = () => ['helpModal', 'specsModal', 'perfModal'].some((id) => !$(id).hidden);
 function resetAll() {
   modules.tour?.stop(false);
   modules.water?.stop();
+  closeModals(); modules.hotspots?.close();
   parts.forEach((p) => (p.visible = true)); state.soloSet = null; setGhost(null);
   select(null);
   state.clip.on = false; updateClip(); $('btnSection').setAttribute('aria-pressed', 'false');
@@ -917,30 +975,35 @@ function resetAll() {
 }
 function onKey(e) {
   if (e.target.tagName === 'INPUT' && e.key !== 'Escape') return;
-  const k = e.key.toLowerCase();
+  if (e.ctrlKey || e.metaKey || e.altKey) return;      // Ctrl+C, Ctrl+R vb. tarayıcıya kalır
+  const c = e.code;
   userActive();
-  if (k === 'escape') {
-    if (!$('helpModal').hidden || !$('perfModal').hidden || !$('specsModal').hidden) { $('helpModal').hidden = true; $('perfModal').hidden = true; $('specsModal').hidden = true; return; }
+  if (c === 'Escape') {
+    if (anyModalOpen()) { closeModals(); return; }
     if (modules.tour.active) { modules.tour.stop(); return; }
     closePopovers();
     if (state.selected) select(null); else if (state.soloSet) { state.soloSet = null; refreshVisibility(); }
-  } else if (k === 'h' && state.selected) toggleVisible(state.selected);
-  else if (k === 'i' && state.selected) toggleSolo(state.selected);
-  else if (k === 'f' && state.selected) focusPart(state.selected);
-  else if (k === 'e') $('btnExplodePlay').click();
-  else if (k === 'c') $('btnSection').click();
-  else if (k === 'd') setDims(!state.dims);
-  else if (k === 't') modules.tour.toggle();
-  else if (k === ' ' && modules.tour.active) { e.preventDefault(); modules.tour.pause(); }
-  else if (k === 'arrowright' && modules.tour.active) modules.tour.next();
-  else if (k === 'arrowleft' && modules.tour.active) modules.tour.prev();
-  else if (k === 'o' || k === '3') $('btnTurn').click();
-  else if (k === 'r') resetAll();
-  else if (k === '?') $('helpModal').hidden = false;
+    return;
+  }
+  if (anyModalOpen()) return;
+  if (c === 'KeyH' && state.selected) toggleVisible(state.selected);
+  else if (c === 'KeyI' && state.selected) toggleSolo(state.selected);
+  else if (c === 'KeyF' && state.selected) focusPart(state.selected);
+  else if (c === 'KeyE') $('btnExplodePlay').click();
+  else if (c === 'KeyC') $('btnSection').click();
+  else if (c === 'KeyD') setDims(!state.dims);
+  else if (c === 'KeyT') modules.tour.toggle();
+  else if (c === 'Space' && modules.tour.active) { e.preventDefault(); modules.tour.pause(); }
+  else if (c === 'ArrowRight' && modules.tour.active) modules.tour.next();
+  else if (c === 'ArrowLeft' && modules.tour.active) modules.tour.prev();
+  else if (c === 'KeyO') $('btnTurn').click();
+  else if (c === 'KeyR') resetAll();
+  else if (e.key === '?') $('helpModal').hidden = false;
 }
 
 // ------------------------------------------------------------------ performance
-const perf = { frames: [], lastRender: 0, gpuExt: null, gpuQueries: [], gpuMs: [], adaptive: true, warm: [] };
+const perf = { frames: [], lastRender: 0, gpuExt: null, gpuQueries: [], gpuMs: [], adaptive: true, adaptFrom: Infinity };
+const TIER0 = tier;
 perf.gpuExt = renderer.getContext().getExtension('EXT_disjoint_timer_query_webgl2');
 function perfFrame(now) {
   const dt = now - perf.lastRender;
@@ -973,10 +1036,18 @@ function updatePerfUI(now, active) {
   $('perfCalls').textContent = `${lastInfo.calls} çağrı`;
   $('perfTris').textContent = `${formatTris(lastInfo.tris)} üçgen`;
   // uyarlanabilir çözünürlük ve kalite: süreklilikte < 45 FPS ise önce piksel oranı, sonra mikro ayrıntı düşer
-  if (perf.adaptive && s && recent.length >= 60 && s.fps < 45) {
+  if (perf.adaptive && s && recent.length >= 60 && s.fps < 45 && now > perf.adaptFrom) {
     if (dpr > 1) { dpr = Math.max(1, dpr - 0.25); renderer.setPixelRatio(dpr); perf.frames.length = 0; }
     else if (tier === 'high') { tier = 'low'; shared.uMicro.value = 0; perf.frames.length = 0; }
   }
+}
+// kiosk tanıtımına her girişte kalite yeniden denenir: tek bir geçici yavaşlık fuar boyunca düşük kalite bırakmasın
+function restoreQuality() {
+  if (dpr === DPR_MAX && tier === TIER0) return;
+  dpr = DPR_MAX; renderer.setPixelRatio(dpr);
+  tier = TIER0; shared.uMicro.value = tier === 'high' ? 1 : 0;
+  perf.frames.length = 0; perf.adaptFrom = performance.now() + 10000;
+  state.needsRender = 2;
 }
 const lastInfo = { calls: 0, tris: 0, maxCalls: 0, maxTris: 0 };
 function fillPerfStats(result) {
@@ -1044,6 +1115,7 @@ const app = {
   THREE, scene, camera, controls, renderer, model, parts, state, turn, MM, MODEL_OFFSET, KIOSK,
   $, toWorld, setView, viewPose, animateCamera, setExplodeTarget, setClip, updateClip, select, setGhost, refreshVisibility,
   setTurntable, setFinish, setDims, setDrawing, setHotspots, resetAll, focusPart, closePopovers, fitDistance, userActive,
+  restoreQuality, markLayout: () => markLayout(),
   modules, onFrame: (fn) => frameHooks.push(fn), requestRender: (n = 2) => { state.needsRender = Math.max(state.needsRender, n); },
   get tier() { return tier; },
 };
@@ -1052,6 +1124,7 @@ window.__viewer = { app, runBenchmark, select, setView, parts, state, setExplode
 
 // ------------------------------------------------------------------ render loop
 let lastT = performance.now();
+let lastExTxt = '';
 const renderLoop = {
   start() { requestAnimationFrame(this.tick); },
   tick: (now) => {
@@ -1065,6 +1138,8 @@ const renderLoop = {
     if (stepBenchmark(now)) active = true;
     for (const fn of frameHooks) if (fn(now, dt)) active = true;
     if (modules.hotspots?.animating()) active = true;
+    // açılış animasyonu kesildiyse, başka bir kamera hareketiyle değiştiyse ya da süresi dolduysa tanıtım biter
+    if (state.intro && (now - introState.t0 > 6000 || (introState.anim && state.camAnim !== introState.anim))) endIntro();
 
     // patlatma
     if (state.explodeAnim) {
@@ -1083,7 +1158,8 @@ const renderLoop = {
       if (bench) applyExplode();
       if (exFrame.active && (exFrame.idle += dt) > 0.4) exFrame.active = false;
     }
-    $('explodeVal').textContent = Math.round(state.explode * 100) + '%';
+    const exTxt = Math.round(state.explode * 100) + '%';
+    if (exTxt !== lastExTxt) { $('explodeVal').textContent = exTxt; lastExTxt = exTxt; }
 
     // AO karışımı: patlatma, gizli veya hayalet parça varsa parça-içi AO'ya geç
     const aoT = Math.max(aoMixTarget, clamp01(state.explode * 2.2));
@@ -1147,6 +1223,7 @@ function pollGpuQueries(gl) {
 }
 
 window.addEventListener('resize', () => {
+  markLayout();
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.setViewOffset(window.innerWidth, window.innerHeight, -viewOffset.x, -viewOffset.y, window.innerWidth, window.innerHeight);
   camera.updateProjectionMatrix();
@@ -1158,12 +1235,18 @@ document.addEventListener('visibilitychange', () => { perf.frames.length = 0; })
 canvas.addEventListener('webglcontextlost', (e) => {
   e.preventDefault();
   fatal('Grafik bağlamı kaybedildi; görüntüleyici yeniden başlatılıyor…');
-  setTimeout(() => location.reload(), 2500);
+  setTimeout(() => reloadPage(KIOSK), 2500);
 });
 
+// kiosk: kendiliğinden yeniden yüklemede doğrudan tanıtım döngüsüyle açılır
+function reloadPage(attract) {
+  if (!attract) { location.reload(); return; }
+  const u = new URL(location.href); u.searchParams.set('attract', '1'); location.replace(u.toString());
+}
 boot().catch((e) => {
   console.error(e);
   $('loaderText').textContent = 'Yükleme hatası: ' + (e && e.message ? e.message : e);
   $('loaderText').style.color = '#ff8a80';
   if (location.protocol === 'file:') $('loaderText').textContent += ' — Bu tarayıcı dosyayı doğrudan açmaya izin vermiyorsa klasördeki "başlat" dosyasını kullanın.';
+  if (KIOSK) { $('loaderText').textContent += ' — 20 sn sonra yeniden denenecek.'; setTimeout(() => reloadPage(true), 20000); }
 });

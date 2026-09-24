@@ -9,6 +9,8 @@ const out = process.argv[3] || './shots_kose';
 fs.mkdirSync(out, { recursive: true });
 const soft = process.env.SOFT_GL || 'llvmpipe';
 const args = soft === 'swiftshader' ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] : ['--use-gl=angle', '--use-angle=gl', '--ignore-gpu-blocklist'];
+// yazılımsal GL'de tek kare (özellikle büyük ekran görüntüsü) saniyeler sürer; GPU gözetçisi bağlamı öldürmesin (gerçek GPU'da gerekmez)
+args.push('--disable-gpu-watchdog');
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', headless: soft === 'swiftshader', args });
 const results = []; const logs = [];
 const check = (name, ok, detail = '') => { results.push({ name, ok, detail }); console.log((ok ? 'PASS ' : 'FAIL ') + name + (detail ? ' — ' + detail : '')); };
@@ -131,8 +133,30 @@ await ev(() => window.__viewer.app.closePopovers());
 await page.click('#btnSpecs'); await page.waitForTimeout(600);
 const nSpecs = await page.locator('#specsList dt').count();
 check('teknik özellikler kartı', nSpecs >= 10 && !(await page.locator('#specsModal').isHidden()), nSpecs + ' satır');
+const cert = await ev(() => ({ block: !document.getElementById('certBlock').hidden, uf: document.getElementById('certValue').textContent,
+  badge: !document.getElementById('certBadge').hidden, rows: document.querySelectorAll('#certList dt').length }));
+check('resmi test (ift): Uf kartı ve rozet', cert.block && cert.uf === '1,0' && cert.badge && cert.rows >= 3, JSON.stringify(cert));
 await shot(page, '06_ozellikler', 800);
 await page.keyboard.press('Escape'); await page.waitForTimeout(400);
+
+// klavye: Ctrl+C kısayol tetiklemez; Türkçe Q'daki "ı" (KeyI) izole eder
+await page.keyboard.press('Control+KeyC'); await page.waitForTimeout(300);
+const kbClip = await ev(() => window.__viewer.state.clip.on);
+await ev(() => window.__viewer.select('orta_conta'));
+await ev(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ı', code: 'KeyI', bubbles: true })));
+await page.waitForTimeout(600);
+const kbSolo = await ev(() => { const s = window.__viewer.state.soloSet; return !!s && s.size === 1 && s.has('orta_conta'); });
+await ev(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ı', code: 'KeyI', bubbles: true })));
+await ev(() => window.__viewer.select(null));
+check('klavye: Ctrl+C serbest, Türkçe Q\'da ı ile izole', !kbClip && kbSolo, JSON.stringify({ kbClip, kbSolo }));
+
+// işaretin açtığı kesit: Kesit düğmesi yanar, kart kapanınca kesit kapanır
+await ev(() => { const hs = window.__viewer.modules.hotspots; hs.open(hs.items.find((i) => i.h.id === 'kaynak').h); });
+await page.waitForTimeout(1500);
+const hsOn = await ev(() => ({ clip: window.__viewer.state.clip.on, btn: document.getElementById('btnSection').getAttribute('aria-pressed') }));
+await page.click('#hotCardClose'); await page.waitForTimeout(800);
+const hsOff = await ev(() => ({ clip: window.__viewer.state.clip.on, btn: document.getElementById('btnSection').getAttribute('aria-pressed') }));
+check('işaret kesiti: düğme senkron, kartla kapanır', hsOn.clip && hsOn.btn === 'true' && !hsOff.clip && hsOff.btn === 'false', JSON.stringify({ hsOn, hsOff }));
 
 // bilgi işaretleri
 await ev(() => window.__viewer.app.setHotspots(true)); await page.waitForTimeout(3000);
@@ -165,8 +189,33 @@ await page.waitForFunction(() => !window.__viewer.state.explodeAnim, null, { tim
 await page.waitForTimeout(500);
 const rest = await ev(() => ({ active: window.__viewer.modules.tour.active, clip: window.__viewer.state.clip.on, ghost: window.__viewer.state.ghostSet, water: window.__viewer.modules.water.active, tgt: window.__viewer.state.explodeTarget }));
 check('turdan çık: durum geri yüklendi', !rest.active && !rest.clip && !rest.ghost && !rest.water && rest.tgt === 0, JSON.stringify(rest));
+// tüm tur bölümleri: her bölümün en yoğun karesi bütçe içinde (x-ray bölümleri dahil)
+const perCh = [];
+await ev(() => window.__viewer.modules.tour.start());
+const nCh = await ev(() => document.querySelectorAll('.tc-dot').length);
+for (let i = 0; i < nCh; i++) {
+  await ev((i) => { const v = window.__viewer; v.modules.tour.goTo(i); v.modules.tour.pause(true); v.lastInfo.maxTris = 0; v.lastInfo.maxCalls = 0; }, i);
+  await page.waitForFunction(() => !window.__viewer.state.explodeAnim && !window.__viewer.state.camAnim, null, { timeout: 60000 }).catch(() => {});
+  await page.waitForTimeout(1500);
+  perCh.push(await ev(() => ({ i: window.__viewer.modules.tour.i, t: window.__viewer.lastInfo.maxTris, c: window.__viewer.lastInfo.maxCalls })));
+}
+await ev(() => window.__viewer.modules.tour.stop(false));
+const worst = perCh.reduce((a, b) => (b.t > a.t ? b : a), perCh[0]);
+check('bütçe: tüm tur bölümleri < 150K üçgen, < 50 çağrı', perCh.every((r) => r.t < 150000 && r.c < 50),
+  perCh.map((r) => `${r.i + 1}:${Math.round(r.t / 1000)}K/${r.c}`).join(' ') + ` · en yoğun ${worst.t}`);
 const maxInfo = await ev(() => ({ ...window.__viewer.lastInfo }));
 check('bütçe (en yoğun durum): < 150K üçgen, < 50 çağrı', maxInfo.maxTris < 150000 && maxInfo.maxCalls < 50, `${maxInfo.maxTris} üçgen, ${maxInfo.maxCalls} çağrı`);
+
+// tur çıkışı kullanıcının durumunu korur: patlatma %50 ve gizli parça
+await ev(() => { const v = window.__viewer; v.app.resetAll(); });
+await page.waitForFunction(() => !window.__viewer.state.explodeAnim, null, { timeout: 30000 }).catch(() => {});
+await ev(() => { const v = window.__viewer; v.setExplodeTarget(0.5, false); v.toggleVisible('cam_2'); v.modules.tour.start(); });
+await page.waitForTimeout(2500);
+await ev(() => window.__viewer.modules.tour.stop());
+await page.waitForFunction(() => !window.__viewer.state.explodeAnim, null, { timeout: 30000 }).catch(() => {});
+const kept = await ev(() => ({ ex: window.__viewer.state.explodeTarget, cam2: window.__viewer.parts.get('cam_2').visible }));
+check('turdan çık: patlatma ve gizli parça geri gelir', Math.abs(kept.ex - 0.5) < 0.01 && kept.cam2 === false, JSON.stringify(kept));
+await ev(() => { const v = window.__viewer; v.toggleVisible('cam_2'); v.app.resetAll(); });
 
 // sayfa geçişi bağlantısı
 const href = await page.locator('.page-switch a:not(.active)').getAttribute('href');
@@ -176,18 +225,33 @@ check('harici ağ isteği yok (çevrimdışı)', external.length === 0, [...orig
 await ctx.close();
 
 // ------------------------------------------------------------------ kiosk
-const k = await openPage(q(url0, 'kiosk=1&intro=0&idle=15&fs=0&aa=0'), { viewport: { width: 1080, height: 1920 }, touch: true });
+const k = await openPage(q(url0, 'kiosk=1&idle=15&fs=0&aa=0&spin=0'), { viewport: { width: 1080, height: 1920 }, touch: true });
 const kp = k.page;
 check('kiosk modu: dokunmatik arayüz', await kp.evaluate(() => document.body.classList.contains('kiosk') && getComputedStyle(document.querySelector('.perf-chip')).display === 'none'));
+// açılış animasyonu sürerken sürükleme: tanıtım biter, kiosk kilitlenmez
+const introAt = await kp.evaluate(() => window.__viewer.state.intro);
+await kp.mouse.move(540, 800); await kp.mouse.down(); await kp.mouse.move(640, 820, { steps: 4 }); await kp.mouse.up();
+await kp.waitForFunction(() => !window.__viewer.state.intro, null, { timeout: 20000 }).catch(() => {});
+check('kiosk: açılış animasyonunda dokunma kilitlemez', introAt === true && !(await kp.evaluate(() => window.__viewer.state.intro)), 'intro başta ' + introAt);
+// yardım penceresi açıkken boşta kalınca tanıtım başlar ve pencere kapanır
+await kp.evaluate(() => { document.getElementById('helpModal').hidden = false; });
 await kp.evaluate(() => { window.__viewer.modules.kiosk.last = performance.now() - 20000; });
 await kp.waitForFunction(() => window.__viewer.modules.kiosk.attract && window.__viewer.modules.tour.active, null, { timeout: 180000 }).catch(() => {});
 const at = await kp.evaluate(() => ({ attract: window.__viewer.modules.kiosk.attract, tour: window.__viewer.modules.tour.active, loop: window.__viewer.modules.tour.loop }));
 check('kiosk: boşta → tanıtım (döngülü tur)', at.attract && at.tour && at.loop, JSON.stringify(at));
+check('kiosk: tanıtımda açık pencere kapanır', await kp.evaluate(() => document.getElementById('helpModal').hidden));
 await shot(kp, '10_kiosk_tanitim', 2500);
 await kp.touchscreen.tap(540, 700); await kp.waitForTimeout(3000);
 const af = await kp.evaluate(() => ({ attract: window.__viewer.modules.kiosk.attract, tour: window.__viewer.modules.tour.active, sel: window.__viewer.state.selected }));
 check('kiosk: dokunuş tanıtımı bitirir (seçim sayılmaz)', !af.attract && !af.tour && !af.sel, JSON.stringify(af));
 await shot(kp, '11_kiosk_etkilesim', 1500);
+// düz kesite geçişte kiosk ayarları korunur (ekran görüntüsü sırasında boşta süresi dolmuş olabilir: sayacı sıfırla)
+await kp.evaluate(() => { const k = window.__viewer.modules.kiosk; if (k.attract) k.exitAttract(); k.poke(); });
+await kp.waitForTimeout(800);
+await kp.locator('.page-switch a:not(.active)').click();
+await kp.waitForURL(/kesit\.html/, { timeout: 30000, waitUntil: 'commit' }).catch(() => {});
+const kUrl = new URL(kp.url());
+check('kiosk: sayfa geçişinde ayarlar korunur', kUrl.pathname.endsWith('kesit.html') && ['kiosk', 'idle', 'fs', 'aa'].every((x) => kUrl.searchParams.has(x)), kUrl.search);
 await k.ctx.close();
 
 const errors = logs.filter((l) => /\[(pageerror|error)\]|requestfailed/.test(l));
