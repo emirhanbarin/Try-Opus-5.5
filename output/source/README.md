@@ -11,6 +11,7 @@ Siteyi (`../site`) üreten ham dosyalar ve betikler. Sunulmaz; yeniden üretim i
 | `reference/kesit_3d_bindirme.png` | 3B modelin uç kesiti (ortografik, 12 px/mm) çizim üzerine |
 | `bake/` | AO bake çıktıları (16 bit PNG), paketlenmiş AO, sıkıştırılmamış GLB |
 | `env/`, `tex/` | Stüdyo HDRI ve galvaniz deseni (KTX2 + önizleme) |
+| `viewer/` | Görüntüleyicinin okunabilir ES modül kaynakları (`js/`), three.js paketi, derleme betiği |
 
 Yeniden üretim (Python 3.11 + `pip install bpy pymupdf shapely scipy pillow`, KTX-Software 4.3, Node + `@gltf-transform/cli`):
 
@@ -21,5 +22,6 @@ Yeniden üretim (Python 3.11 + `pip install bpy pymupdf shapely scipy pillow`, K
 5. `gltf-transform meshopt bake/supremo85_raw.glb ../site/assets/supremo85.glb --quantization-volume scene --quantize-position 16 --quantize-normal 12 --quantize-texcoord 14`
 6. `ktx create --encode basis-lz ... bake/ao_packed.png ../site/assets/ao.ktx2`; `scripts/make_studio_hdri.py`, `scripts/make_spangle.py`
 7. `scripts/overlay_3d.py` — 3B/çizim bindirme doğrulaması; `scripts/interaction_test.mjs`, `scripts/bench.mjs` — tarayıcı testleri
+8. `viewer/build.sh` — `viewer/js/*.js` kaynaklarını `../site/js/app.js` tek klasik betiğine derler (http ve file:// uyumlu) ve `assets-embedded.js`'i üretir
 
 Not: Teknik dökümanın kopyası (`reference/Supremo85_teknik_dokuman.pdf`) yalnızca yerelde tutulur, depoya eklenmez.

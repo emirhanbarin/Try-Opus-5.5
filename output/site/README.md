@@ -7,14 +7,15 @@ Supremo 85 (8500 serisi) uPVC pencere sisteminin kasa + kanat + üçlü cam kesi
 | Sistem | Yapılacak |
 |---|---|
 | **Windows** | `başlat.bat` dosyasına çift tıklayın. |
-| **macOS** | `başlat.command` dosyasına çift tıklayın. İlk açılışta "tanımlanamayan geliştirici" uyarısı çıkarsa dosyaya sağ tıklayıp **Aç**'ı seçin. |
+| **macOS** | `başlat.command` dosyasına çift tıklayın (ilk açılış için aşağıdaki nota bakın). |
 | **Linux** | Klasörde `python3 sunucu.py` çalıştırın. |
+| **Her sistemde (sunucusuz)** | `index.html` dosyasına çift tıklayın; site tarayıcıda doğrudan açılır. |
 
-Yerel sunucu açılır ve tarayıcı otomatik olarak `http://localhost:8080` adresine gider (port doluysa sıradaki boş port kullanılır). Kapatmak için açılan terminal penceresini kapatın.
+Başlat dosyası yerel sunucuyu açar ve tarayıcı otomatik olarak `http://localhost:8080` adresine gider (port doluysa sıradaki boş port kullanılır). Kapatmak için açılan terminal penceresini kapatın. Önce ZIP'i bir klasöre çıkarın; ZIP içinden doğrudan çift tıklanırsa diğer dosyalar bulunamaz.
+
+**macOS "Apple … doğrulayamadı" uyarısı verirse:** İnternetten indirilen imzasız betiklerde macOS bu uyarıyı gösterir. **Sistem Ayarları → Gizlilik ve Güvenlik** bölümünün altındaki **Yine de Aç** düğmesine basıp dosyayı yeniden açın (macOS 14 ve öncesinde: dosyaya sağ tık → **Aç**). Uyarıyla uğraşmak istemezseniz `index.html` dosyasına çift tıklamanız yeterli.
 
 **Python veya Node yoksa:** bir şey yapmanız gerekmez; başlat dosyası Windows'ta PowerShell'i, macOS'ta Perl'i yedek sunucu olarak kullanır. O da açılmazsa [python.org](https://www.python.org/downloads/) adresinden Python 3 kurup başlat dosyasına yeniden çift tıklayın.
-
-> `index.html` dosyası doğrudan (çift tıklayarak) açılırsa tarayıcı güvenlik nedeniyle yerel model dosyalarını engeller; bu yüzden başlat dosyasını kullanın.
 
 Tarayıcı: WebGL 2 destekli güncel Chrome, Edge, Firefox veya Safari (16.4+).
 
@@ -42,10 +43,11 @@ Tarayıcı: WebGL 2 destekli güncel Chrome, Edge, Firefox veya Safari (16.4+).
 ## Klasör yapısı
 
 ```
-index.html, css/, js/          arayüz ve uygulama (derleme gerektirmez)
+index.html, css/               arayüz (Inter yazı tipi CSS'e gömülü)
+js/app.js                      uygulama + three.js r186, tek dosya (kaynak: output/source/viewer)
 assets/                        model (.glb) ve KTX2 dokular
-vendor/                        three.js r186 paketi, basis dönüştürücü
-fonts/                         Inter (OFL)
+assets/assets-embedded.js      aynı dosyaların gömülü kopyası (index.html doğrudan açılınca kullanılır)
+vendor/basis/                  KTX2 (Basis) dönüştürücü
 başlat.bat / başlat.command    çift tıklayarak başlatma
 sunucu.py / .js / .ps1 / .pl   yerel statik sunucular (Python / Node / PowerShell / Perl)
 ```

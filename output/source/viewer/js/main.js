@@ -98,7 +98,31 @@ function loadKTX(url, key) {
   return new Promise((res, rej) => ktx2.load(url, res, (e) => progress(key, e.loaded, e.total), rej));
 }
 
+// index.html doğrudan (file://) açıldığında tarayıcı yerel dosya okumayı engeller.
+// Bu durumda ikili dosyalar tek bir klasik betikten (data: URL) okunur; sunucu gerekmez.
+async function setupFileProtocol() {
+  if (location.protocol !== 'file:') return;
+  loader.text.textContent = 'Yerel dosyalar hazırlanıyor…';
+  await new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'assets/assets-embedded.js';
+    s.onload = res;
+    s.onerror = () => rej(new Error('assets/assets-embedded.js okunamadı'));
+    document.head.appendChild(s);
+  });
+  const emb = window.SUPREMO85_EMBEDDED || {};
+  const keys = Object.keys(emb);
+  manager.setURLModifier((url) => {
+    if (url.startsWith('data:') || url.startsWith('blob:')) return url;
+    const clean = url.replace(/^\.\//, '');
+    if (emb[clean]) return emb[clean];
+    const k = keys.find((key) => clean.endsWith('/' + key) || clean.endsWith(key));
+    return k ? emb[k] : url;
+  });
+}
+
 async function boot() {
+  await setupFileProtocol();
   loader.text.textContent = 'Model ve dokular yükleniyor…';
   // basis transcoder boyutu yaklaşık takip
   manager.onProgress = (url) => { if (/basis_transcoder/.test(url)) progress('basis', EXPECTED.basis, EXPECTED.basis); };
@@ -930,5 +954,5 @@ boot().catch((e) => {
   console.error(e);
   $('loaderText').textContent = 'Yükleme hatası: ' + (e && e.message ? e.message : e);
   $('loaderText').style.color = '#ff8a80';
-  if (location.protocol === 'file:') $('loaderText').textContent = 'Lütfen klasördeki "başlat" dosyasıyla açın (dosya doğrudan açıldığında tarayıcı yerel dosyaları engeller).';
+  if (location.protocol === 'file:') $('loaderText').textContent += ' — Bu tarayıcı dosyayı doğrudan açmaya izin vermiyorsa klasördeki "başlat" dosyasını kullanın.';
 });
